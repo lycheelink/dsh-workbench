@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ascend-profiler · Profiling 参数采集台</title>
+<style>
+  :root{
+    --bg:#edf1f6; --panel:#ffffff;
+    --ink:#1b2633; --sub:#56657a; --muted:#8795a6;
+    --line:#dfe6ee; --line-strong:#cdd6e0;
+    --brand:#0e7d70; --brand-deep:#0a5c52; --brand-soft:#e4f2ef;
+    --ok:#177a4f; --ok-soft:#e4f4ec;
+    --warn:#b0570b; --warn-soft:#fcf1e2;
+    --err:#d64541; --err-soft:#fdefec;
+    --console:#0b1420; --console-ink:#d9e2ee; --console-sub:#8ea0b6;
+    --j-key:#7cc5ff; --j-str:#a7e2bd; --j-num:#f2c66d; --j-bool:#f2a0a8;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    --shadow:0 1px 2px rgba(15,23,42,.05),0 2px 8px rgba(15,23,42,.05);
+    --radius:8px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    background:var(--bg);color:var(--ink);font-size:14px;line-height:1.55;-webkit-font-smoothing:antialiased}
+
+  /* ---------- 控制台头部 ---------- */
+  header{background:linear-gradient(115deg,#0b1420 0%,#101d30 55%,#0c1a2e 100%);color:#fff;
+    padding:20px 0 18px;position:relative;overflow:hidden}
+  header::before{content:"";position:absolute;inset:0;pointer-events:none;
+    background:repeating-linear-gradient(0deg,transparent 0 23px,rgba(255,255,255,.025) 23px 24px),
+               repeating-linear-gradient(90deg,transparent 0 23px,rgba(255,255,255,.025) 23px 24px)}
+  .head{max-width:1180px;margin:0 auto;padding:0 20px;position:relative;
+    display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+  .brand h1{margin:0;font-size:20px;font-weight:700;letter-spacing:.02em}
+  .brand .slug{margin-top:3px;font-family:var(--mono);font-size:11px;color:var(--console-sub);letter-spacing:.02em}
+
+  .crumb-bar{position:sticky;top:0;z-index:30;background:#fff;border-bottom:1px solid var(--line);box-shadow:0 1px 3px rgba(15,23,42,.08)}
+  .crumb{max-width:1180px;margin:0 auto;padding:6px 20px;display:flex;align-items:center;gap:6px}
+  .crumb-back{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:var(--sub);
+    text-decoration:none;padding:3px 8px;border-radius:6px;transition:color .15s,background .15s}
+  .crumb-back:hover{color:var(--brand-deep);background:var(--brand-soft)}
+  .crumb-back:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+  .crumb-sep{color:var(--muted);user-select:none}
+  .crumb-current{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .head-state{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .chip{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--console-ink);
+    border:1px solid rgba(255,255,255,.16);border-radius:5px;padding:4px 10px;background:rgba(255,255,255,.04)}
+  .annun{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:600;color:var(--console-sub);
+    border:1px solid rgba(255,255,255,.16);border-radius:999px;padding:4px 12px;background:rgba(255,255,255,.04)}
+  .annun i{width:7px;height:7px;border-radius:50%;background:#7486a0}
+  .annun.go{color:#bdf0d1;border-color:rgba(76,214,140,.38);background:rgba(60,203,130,.08)}
+  .annun.go i{background:#3ccb82;box-shadow:0 0 8px rgba(60,203,130,.9)}
+  .head-sub{max-width:1180px;margin:9px auto 0;padding:0 20px;position:relative;
+    font-size:13px;color:var(--console-sub);line-height:1.6}
+
+  /* ---------- 布局 ---------- */
+  .wrap{max-width:1180px;margin:0 auto;padding:24px 20px 36px;display:grid;
+    grid-template-columns:minmax(0,1fr) 404px;gap:24px;align-items:start}
+  @media(max-width:980px){.wrap{grid-template-columns:1fr}}
+  footer{max-width:1180px;margin:0 auto;padding:0 20px 30px;text-align:center;color:var(--muted);font-size:11.5px}
+
+  /* ---------- 卡片 ---------- */
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:var(--shadow);padding:18px 20px;margin-bottom:18px;scroll-margin-top:14px;
+    transition:box-shadow .2s,border-color .2s}
+  .card h2{margin:0 0 6px;font-size:15px;display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+  .card h2 .tag{font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+    padding:3px 8px;border-radius:4px;background:var(--brand-soft);color:var(--brand-deep)}
+  .card .desc{color:var(--sub);font-size:12.5px;margin:0 0 16px;line-height:1.6}
+  .sec-ok{font-family:var(--mono);font-size:10px;font-weight:700;color:var(--ok);background:var(--ok-soft);
+    padding:3px 9px;border-radius:999px;margin-left:auto;white-space:nowrap}
+  .card.flash{box-shadow:0 0 0 3px var(--brand-soft);border-color:var(--brand)}
+  .subhead{font-size:12px;font-weight:700;color:var(--ink);display:flex;align-items:center;gap:8px;margin:4px 0 12px}
+  .subhead::before{content:"";width:3px;height:12px;border-radius:2px;background:var(--brand)}
+  .subnote{color:var(--sub);font-size:11.5px;margin:-6px 0 12px;line-height:1.6}
+  .attach{margin-top:16px;border-top:1px solid var(--line);padding-top:14px}
+
+  /* ---------- 表单 ---------- */
+  .field{margin-bottom:15px}
+  .field label{display:block;font-weight:600;margin-bottom:6px;font-size:13px}
+  .field .hint{color:var(--muted);font-size:11.5px;margin-top:4px;line-height:1.6}
+  .req{color:var(--err);font-weight:700;margin-left:2px}
+  .opt{color:var(--muted);font-size:11px;margin-left:4px;font-weight:500}
+  .key{font-family:var(--mono);font-size:12px}
+  .kg{color:var(--muted);font-weight:500;font-size:11px;margin-left:6px}
+  input[type=text],input[type=number],select,textarea{width:100%;padding:9px 11px;border:1px solid var(--line-strong);
+    border-radius:6px;font-size:13px;font-family:inherit;background:#fff;color:var(--ink);transition:border-color .15s,box-shadow .15s}
+  input::placeholder,textarea::placeholder{color:var(--muted)}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-soft)}
+  textarea{resize:vertical;min-height:64px;font-family:var(--mono);font-size:12px;line-height:1.6}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:560px){.row{grid-template-columns:1fr}}
+  .input-unit{display:flex;gap:8px;align-items:stretch}
+  .input-unit input[type=text]{flex:1 1 auto;min-width:0}
+  .input-unit .unit-chk{display:inline-flex;flex:0 0 auto;align-items:center;gap:6px;margin:0;padding:0 12px;
+    border:1px solid var(--line-strong);border-radius:6px;background:#fff;font-size:13px;font-weight:600;
+    white-space:nowrap;cursor:pointer;transition:border-color .15s,background .15s;user-select:none}
+  .input-unit .unit-chk input{width:auto;padding:0;margin:0;cursor:pointer;accent-color:var(--brand)}
+  .input-unit .unit-chk.on{border-color:var(--brand);background:var(--brand-soft);color:var(--brand-deep)}
+
+  /* 即时格式提示 / 跳转高亮 */
+  .field.warn input,.field.warn select,.field.warn textarea{border-color:var(--warn)}
+  .field.warn input:focus{border-color:var(--warn);box-shadow:0 0 0 3px var(--warn-soft)}
+  .warn-msg{color:var(--warn);font-size:11.5px;margin-top:4px}
+  .field.flash input,.field.flash select,.field.flash textarea{border-color:var(--err);background:var(--err-soft)}
+  .field.flash label{color:var(--err)}
+
+  /* ---------- 选择卡片 ---------- */
+  .radio-grid{display:grid;gap:10px}
+  .radio-grid.cols2{grid-template-columns:1fr 1fr}
+  .radio-grid.cols3{grid-template-columns:repeat(3,1fr)}
+  @media(max-width:560px){.radio-grid.cols2,.radio-grid.cols3{grid-template-columns:1fr}}
+  .opt-card{border:1px solid var(--line-strong);border-radius:7px;padding:12px 14px;cursor:pointer;display:flex;gap:10px;
+    align-items:flex-start;background:#fff;position:relative;transition:border-color .15s,background .15s}
+  .opt-card:hover{border-color:var(--brand)}
+  .opt-card:focus-within{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-soft)}
+  .opt-card.sel{border-color:var(--brand);background:var(--brand-soft)}
+  .opt-card.sel::after{content:"✓";position:absolute;top:9px;right:11px;font-size:12px;font-weight:700;color:var(--brand)}
+  .opt-card input{margin-top:3px;accent-color:var(--brand)}
+  .opt-card .t{font-weight:650;font-size:13px}
+  .opt-card .d{color:var(--sub);font-size:11.5px;margin-top:3px;line-height:1.55;padding-right:14px}
+
+  .section-note{background:var(--warn-soft);border:1px solid #efd8ab;color:#8a4a00;
+    border-radius:6px;padding:9px 12px;font-size:12px;margin-bottom:14px;line-height:1.6}
+  .mode-banner{margin-top:14px;padding:10px 14px 10px 12px;font-size:12.5px;line-height:1.6;
+    border-left:3px solid var(--brand);background:var(--brand-soft);color:var(--brand-deep);border-radius:6px}
+
+  /* ---------- 输出面板 ---------- */
+  .out{position:sticky;top:20px}
+  html:not([data-dsh-embed]) .out{top:44px}
+  @media(max-width:980px){.out{position:static}}
+  .out .card{margin-bottom:0}
+  .collapse-btn{float:right;font-size:12px;color:var(--brand);cursor:pointer;user-select:none;background:none;border:none;font-weight:600;padding:0}
+  .collapse-btn:focus-visible{outline:2px solid var(--brand);outline-offset:2px;border-radius:4px}
+
+  .cmdbar{display:flex;align-items:center;gap:10px;margin:0 0 12px;padding:9px 12px;border:1px dashed var(--line-strong);
+    border-radius:7px;background:#f7f9fc}
+  .cmd-label{font-size:11px;font-weight:700;color:var(--muted);flex:0 0 auto}
+  .cmd-val{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--brand-deep);overflow:hidden;
+    text-overflow:ellipsis;white-space:nowrap}
+
+  .phases{margin:0 0 14px;padding:12px 13px 8px;background:#f6f8fb;border:1px solid var(--line);border-radius:7px}
+  .phases-cap{font-size:11px;font-weight:700;color:var(--muted);margin:0 4px 4px}
+  .phase-row{display:flex;align-items:center;gap:9px;width:100%;border:none;background:none;padding:5px 4px;cursor:pointer;
+    border-radius:5px;font-family:inherit;font-size:12.5px;color:var(--sub);text-align:left}
+  .phase-row:hover{background:var(--brand-soft)}
+  .phase-row:focus-visible{outline:2px solid var(--brand);outline-offset:1px}
+  .phase-dot{width:7px;height:7px;border-radius:50%;background:#c3ccd6;flex:0 0 auto}
+  .phase-row.ready .phase-dot{background:var(--ok)}
+  .phase-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .phase-st{font-size:10.5px;font-weight:700;color:var(--muted);flex:0 0 auto}
+  .phase-row.ready{color:var(--ink)}
+  .phase-row.ready .phase-st{color:var(--ok)}
+
+  .meter{margin:0 0 12px}
+  .meter-head{display:flex;justify-content:space-between;align-items:baseline;font-size:11.5px;color:var(--muted);margin-bottom:6px;font-weight:600}
+  .meter-head .meter-state{font-variant-numeric:tabular-nums;font-weight:700;color:var(--ink)}
+  .meter-bar{height:8px;border-radius:4px;background:#e7edf4;border:1px solid #dbe3ec;overflow:hidden}
+  .meter-bar span{display:block;height:100%;width:0;border-radius:3px;background:linear-gradient(90deg,var(--brand-deep),var(--brand));transition:width .3s ease}
+  .meter-bar.done span{background:linear-gradient(90deg,#0f6b45,var(--ok))}
+
+  pre{background:var(--console);color:var(--console-ink);border:1px solid #1c2b40;border-radius:8px;padding:14px 16px;overflow:auto;max-height:420px;
+    font-size:11.5px;line-height:1.6;font-family:var(--mono);margin:0}
+  pre::-webkit-scrollbar{width:8px;height:8px}
+  pre::-webkit-scrollbar-thumb{background:#2a3c55;border-radius:4px}
+  pre::-webkit-scrollbar-track{background:transparent}
+  pre .j-k{color:var(--j-key)} pre .j-s{color:var(--j-str)} pre .j-n{color:var(--j-num)} pre .j-b{color:var(--j-bool)}
+
+  /* ---------- 按钮 / 徽标 ---------- */
+  .btn{display:inline-flex;align-items:center;gap:6px;border:none;border-radius:6px;padding:9px 15px;
+    font-size:13px;font-weight:600;cursor:pointer;transition:.15s;font-family:inherit}
+  .btn:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+  .btn.primary{background:var(--brand);color:#fff}
+  .btn.primary:hover{background:var(--brand-deep)}
+  .btn.ghost{background:#eef2f7;color:var(--ink);border:1px solid var(--line)}
+  .btn.ghost:hover{background:#e3e9f0}
+  .btn-row{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
+  .badge{display:inline-block;font-size:11px;padding:2px 8px;border-radius:6px;background:#eef2f7;color:var(--sub);font-weight:600}
+  .badge.ok{background:var(--ok-soft);color:var(--ok)}
+  .badge.warn{background:var(--warn-soft);color:var(--warn)}
+  .badge.err{background:var(--err-soft);color:var(--err)}
+  .kv{font-size:12px;color:var(--sub);margin:2px 0 10px;line-height:1.7}
+  .miss-link{color:var(--err);text-decoration:none;border-bottom:1px dotted currentColor}
+  .miss-link:hover{text-decoration:underline}
+  #validBox.state-warn .miss-link{color:var(--warn)}
+
+  .toast{position:fixed;right:20px;bottom:20px;z-index:50;background:var(--console);color:var(--console-ink);
+    font-size:12.5px;padding:10px 16px;border-radius:8px;box-shadow:0 8px 24px rgba(10,18,30,.35);
+    border:1px solid rgba(255,255,255,.1);opacity:0;transform:translateY(8px);transition:opacity .25s,transform .25s;
+    pointer-events:none;max-width:340px;line-height:1.5}
+  .toast.show{opacity:1;transform:none}
+
+  .hidden{display:none!important}
+
+  @media (prefers-reduced-motion:reduce){
+    *{transition:none!important;animation:none!important}
+    html{scroll-behavior:auto}
+  }
+
+  /* ---------- 嵌入模式（DSH 工作台 iframe） ----------
+     由宿主在 srcDoc 前置注入 window.__DASH_EMBED__=true 开启：
+     隐藏站点级头/尾与「复制触发指令」，显示「启动 Profiling」按钮
+     （启动动作经桥转交宿主，替换独立态的聊天粘贴闭环），
+     去掉宽度上限、背景透明以融入宿主页面。独立部署时不受影响。 */
+  html[data-dsh-embed] .crumb-bar,
+  html[data-dsh-embed] header,
+  html[data-dsh-embed] footer{display:none}
+  html[data-dsh-embed] body{background:transparent}
+  html[data-dsh-embed] .wrap{max-width:none;padding:0}
+  html[data-dsh-embed] #copyCmdBtn{display:none}
+</style>
+</head>
+<body>
+<div class="crumb-bar">
+  <div class="crumb">
+    <a class="crumb-back" href="workbench.html">← 返回工作台</a>
+    <span class="crumb-sep" aria-hidden="true">/</span>
+    <span class="crumb-current">Profiling 参数采集台</span>
+  </div>
+</div>
+
+<header>
+  <div class="head">
+    <div class="brand">
+      <h1>Profiling 参数采集台</h1>
+      <div class="slug">ascend-profiler</div>
+    </div>
+    <div class="head-state">
+      <span class="chip" id="headMode">在线服务采集</span>
+      <span class="chip" id="headAnalysis">调度分析</span>
+      <div class="annun" id="headAnnun" role="status" aria-label="仍有必填项待完善"><i></i><span>待完善</span></div>
+    </div>
+  </div>
+  <p class="head-sub">为昇腾 NPU 推理服务的 Profiling 采集与分析收集必要参数，实时生成可直接提交给 ascend-profiler SKILL 的结构化 JSON。</p>
+</header>
+
+<div class="wrap">
+  <!-- ============ 左：表单区 ============ -->
+  <main>
+    <!-- ① 采集模式 -->
+    <section class="card" id="modeCard">
+      <h2>采集模式 <span class="tag" id="modeBadge">在线服务采集</span> <span class="sec-ok" hidden>✓ 就绪</span></h2>
+      <p class="desc">采集方式不可自动推断，须你显式选择。不同模式对应完全不同的必填参数集，选定后下方「模式专属参数」随之切换。</p>
+      <div class="radio-grid" id="modeGrid">
+        <label class="opt-card sel" data-mode="live_service_collection">
+          <input type="radio" name="mode" value="live_service_collection" checked>
+          <div><div class="t">在线服务采集 · attach</div>
+            <div class="d">服务已在运行，profiler attach 到进程采集。唯一硬依赖：服务进程 PID。</div></div>
+        </label>
+        <label class="opt-card" data-mode="launch_service_collection">
+          <input type="radio" name="mode" value="launch_service_collection">
+          <div><div class="t">拉起服务采集 · 驱动 workload</div>
+            <div class="d">profiler 按启动脚本拉起推理服务，并执行 workload 脚本驱动压测采集。必填：服务启动脚本 + workload 驱动脚本。</div></div>
+        </label>
+        <label class="opt-card" data-mode="existing_profiling_analysis">
+          <input type="radio" name="mode" value="existing_profiling_analysis">
+          <div><div class="t">已有数据分析 · 直接分析</div>
+            <div class="d">跳过采集，直接对已有 profiling 数据执行分析，产出瓶颈分析结果。必填：输入目录 + 分析结果输出目录。</div></div>
+        </label>
+      </div>
+      <div class="mode-banner" id="modeBanner">本次采集 attach 到运行中的服务进程，不干预服务启停。</div>
+    </section>
+
+    <!-- ② 通用采集参数 -->
+    <section class="card" id="baseCard">
+      <h2><span class="tag">BASE</span>通用采集参数 <span class="sec-ok" hidden>✓ 就绪</span></h2>
+      <p class="desc">三种采集模式共用的基础参数：模型名称必填，采集维度与分析模式带默认值，采集时长与输出根目录留空走 SKILL 默认。</p>
+      <div class="field" data-fid="pr_model"><label for="pr_model">模型名称 <span class="req">*</span></label>
+        <input type="text" id="pr_model" placeholder="如 Qwen3-235B-A22B-W8A8">
+        <div class="hint">报告上下文增强项（--model-name）</div></div>
+      <div class="row">
+        <div class="field" data-fid="pr_collect"><label for="pr_collect">采集维度 <span class="opt">默认 auto</span></label>
+          <select id="pr_collect">
+            <option value="auto">auto（自动）</option>
+            <option value="all">all（全量）</option>
+            <option value="computation">computation（计算）</option>
+            <option value="schedule">schedule（调度）</option>
+            <option value="cluster">cluster（集群）</option>
+          </select>
+          <div class="hint">--collect-mode；analysis-mode=schedule 时 preflight 常归一化为 schedule</div></div>
+        <div class="field" data-fid="pr_analysis"><label for="pr_analysis">分析模式 <span class="opt">默认 schedule</span></label>
+          <select id="pr_analysis">
+            <option value="schedule">schedule（调度）</option>
+            <option value="all">all（全量）</option>
+            <option value="computation">computation（计算）</option>
+            <option value="cluster">cluster（集群分析）</option>
+            <option value="comparison">comparison（对比分析）</option>
+          </select>
+          <div class="hint">--analysis-mode；comparison 需要两份 profiling 数据，仅「已有数据分析」模式完整支持</div></div>
+      </div>
+      <div class="section-note hidden" id="cmpModeNote">⚠ comparison（对比分析）建议配合「已有数据分析」模式使用；其余模式下不会采集/输出对比路径。</div>
+      <div class="row">
+        <div class="field" data-fid="pr_duration"><label for="pr_duration">采集时长（秒） <span class="opt">可选 · 默认 10</span></label>
+          <input type="number" id="pr_duration" placeholder="默认 10">
+          <div class="hint">--duration，正整数秒</div></div>
+        <div class="field" data-fid="pr_root"><label for="pr_root">Profiling 输出根目录 <span class="opt">可选</span></label>
+          <input type="text" id="pr_root" placeholder="/mnt/share_space/profiling">
+          <div class="hint">--profiling-root；留空默认 /mnt/share_space/profiling，强烈建议显式给出</div></div>
+      </div>
+    </section>
+
+    <!-- ③ 模式专属参数 -->
+    <section class="card" id="specCard">
+      <h2><span class="tag">SPEC</span>模式专属参数 <span class="sec-ok" hidden>✓ 就绪</span></h2>
+      <p class="desc">随「采集模式」切换的专属参数组；当前模式下未使用的字段不进入输出 JSON。</p>
+
+      <!-- 在线服务采集 -->
+      <div class="attach" id="liveFields">
+        <div class="subhead">在线服务采集 · attach 参数</div>
+        <div class="field" data-fid="pr_pid"><label for="pr_pid">服务进程 PID <span class="req">*</span> <span class="opt">该模式唯一硬依赖</span></label>
+          <input type="number" id="pr_pid" placeholder="如 19475">
+          <div class="hint">--service-pid，被 profiler attach 采集的服务进程号</div></div>
+        <div class="field" data-fid="pr_url"><label for="pr_url">服务地址 <span class="opt">可选</span></label>
+          <input type="text" id="pr_url" placeholder="如 http://127.0.0.1:8000">
+          <div class="hint">--base-url，用于报告保留服务访问上下文</div></div>
+      </div>
+
+      <!-- 拉起服务采集 -->
+      <div class="attach hidden" id="launchFields">
+        <div class="subhead">拉起服务采集 · profiler 启动参数</div>
+        <div class="field" data-fid="pr_start"><label for="pr_start">服务启动脚本 <span class="req">*</span></label>
+          <input type="text" id="pr_start" placeholder="/opt/scripts/serve.sh">
+          <div class="hint">--service-start-script，由 profiler 拉起的推理服务启动脚本（服务端绝对路径）</div></div>
+        <div class="field" data-fid="pr_work"><label for="pr_work">Workload 驱动脚本 <span class="req">*</span></label>
+          <input type="text" id="pr_work" placeholder="/opt/scripts/workload.py">
+          <div class="hint">--workload-script，由 profiler 执行的压测驱动脚本（服务端绝对路径）</div></div>
+        <div class="field" data-fid="pr_warmup"><label for="pr_warmup">预热时长（秒） <span class="opt">可选 · 默认 30</span></label>
+          <input type="number" id="pr_warmup" placeholder="默认 30">
+          <div class="hint">--warmup-seconds，workload 启动后、正式采集前的预热等待</div></div>
+      </div>
+
+      <!-- 已有数据分析 -->
+      <div class="attach hidden" id="existFields">
+        <div class="subhead">已有数据分析 · 分析参数</div>
+        <div class="field" data-fid="pr_input"><label for="pr_input">Profiling 输入目录 <span class="req">*</span></label>
+          <input type="text" id="pr_input" placeholder="/mnt/share_space/profiling/PROF_xxx">
+          <div class="hint">最低依赖为原始 PROF_* 目录；非 comparison 模式必填</div></div>
+        <div class="field" data-fid="pr_out"><label for="pr_out">分析结果输出目录 <span class="req">*</span></label>
+          <input type="text" id="pr_out" placeholder="/mnt/share_space/analysis">
+          <div class="hint">--output-path，与 profiling 输入目录同一轮硬依赖确认</div></div>
+        <div class="attach" id="compareFields">
+          <div class="section-note">⚠ 对比分析需要两份 profiling 数据：基准目录与对比目录均必填。</div>
+          <div class="row">
+            <div class="field" data-fid="pr_bench"><label for="pr_bench">基准 profiling 目录 <span class="req">*</span></label>
+              <input type="text" id="pr_bench" placeholder="/mnt/share_space/profiling/base/PROF_xxx">
+              <div class="hint">--benchmark-profiling-path，仅 analysis-mode=comparison 时必填</div></div>
+            <div class="field" data-fid="pr_comp"><label for="pr_comp">对比 profiling 目录 <span class="req">*</span></label>
+              <input type="text" id="pr_comp" placeholder="/mnt/share_space/profiling/comp/PROF_xxx">
+              <div class="hint">--comparison-profiling-path，仅 analysis-mode=comparison 时必填</div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ============ 右：输出区 ============ -->
+  <aside class="out">
+    <section class="card">
+      <h2>参数输出 <button class="collapse-btn" id="toggleJson">收起 JSON</button></h2>
+      <p class="desc">随表单实时更新，就绪后复制提交给 SKILL。</p>
+      <div class="cmdbar"><span class="cmd-label">触发指令</span><code class="cmd-val" id="cmdVal">开始 Profiling 采集（在线服务采集）</code></div>
+      <div class="phases">
+        <p class="phases-cap">阶段就绪</p>
+        <div id="phaseList"></div>
+      </div>
+      <div class="meter">
+        <div class="meter-head"><span>必填完成度</span><span class="meter-state" id="meterState">0 / 0</span></div>
+        <div class="meter-bar" id="meterBar"><span id="meterFill"></span></div>
+      </div>
+      <div id="validBox" class="kv" aria-live="polite"></div>
+      <pre id="jsonOut"></pre>
+      <div class="btn-row">
+        <button class="btn primary hidden" id="launchBtn" disabled>启动 Profiling</button>
+        <button class="btn primary" id="copyCmdBtn" data-orig="复制触发指令">复制触发指令</button>
+        <button class="btn ghost" id="downloadBtn">下载 JSON</button>
+        <button class="btn ghost" id="resetBtn">重置表单</button>
+      </div>
+    </section>
+  </aside>
+</div>
+
+<footer>参数采集与结构化输出工具 · 输出的 JSON 可直接提交给 ascend-profiler SKILL</footer>
+
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const val = id => { const el = $(id); return el ? (el.value || "").trim() : ""; };
+
+// ── 嵌入模式桥（DSH 工作台 iframe） ──
+// 宿主以 iframe(srcDoc) 引入本页时，会在文档最前注入
+// window.__DASH_EMBED__ = true。嵌入态通过 postMessage 向宿主同步
+// 最新 JSON / 就绪态 / 内容高度；独立部署时 IS_EMBED=false，这些全为 no-op。
+const IS_EMBED = window.__DASH_EMBED__ === true;
+if(IS_EMBED) document.documentElement.setAttribute('data-dsh-embed', '');
+function postBridge(kind, extra){
+  if(!IS_EMBED) return;
+  try{
+    const msg = Object.assign({ bridge:'dsh-wb:artifact', kind, cardId:'ascend-profiler' }, extra || {});
+    (window.parent || window).postMessage(msg, '*');
+  }catch(e){}
+}
+// 当前未满足的必填项（render() 复用同一口径，保持单一真相）
+function missingRequired(){
+  return requiredList().filter(f => !val(f.id));
+}
+
+const MODE_META = {
+  live_service_collection:  { label:'在线服务采集', short:'在线服务',
+    banner:'本次采集 attach 到运行中的服务进程，不干预服务启停。' },
+  launch_service_collection:{ label:'拉起服务采集', short:'拉起服务',
+    banner:'profiler 将按启动脚本拉起推理服务，运行 workload 脚本驱动压测采集，完成采集后按需清理。' },
+  existing_profiling_analysis:{ label:'已有数据分析', short:'已有数据',
+    banner:'跳过采集，直接对已有 PROF_* 目录执行分析，产出瓶颈分析结果。' }
+};
+
+const ANALYSIS_LABEL = { all:'全量', computation:'计算', schedule:'调度', cluster:'集群', comparison:'对比' };
+const STORAGE_KEY = 'ascend-profiler.draft.v1';
+
+function curMode(){ const r=document.querySelector('input[name=mode]:checked'); return r ? r.value : 'live_service_collection'; }
+function curAnalysis(){ const v = val('pr_analysis'); return v || 'schedule'; }
+
+// ---------- 模式 联动 ----------
+function applyMode(){
+  const mode = curMode(), meta = MODE_META[mode];
+  $('modeBadge').textContent = meta.label;
+  $('modeBanner').textContent = meta.banner;
+  $('headMode').textContent = meta.label;
+
+  $('liveFields').classList.toggle('hidden', mode !== 'live_service_collection');
+  $('launchFields').classList.toggle('hidden', mode !== 'launch_service_collection');
+  $('existFields').classList.toggle('hidden', mode !== 'existing_profiling_analysis');
+  syncCompare();
+  render();
+}
+function syncCompare(){
+  // 对比路径只在「已有数据分析 + analysis-mode=comparison」时出现
+  const show = curMode() === 'existing_profiling_analysis' && curAnalysis() === 'comparison';
+  $('compareFields').classList.toggle('hidden', !show);
+  const note = $('cmpModeNote');
+  if(note) note.classList.toggle('hidden', !(curAnalysis() === 'comparison' && curMode() !== 'existing_profiling_analysis'));
+}
+
+// ---------- 选择卡片高亮（含键盘方向键切换） ----------
+function bindGrid(sel, applyFn){
+  document.querySelectorAll(sel).forEach(c=>{
+    c.addEventListener('click', ()=>{
+      c.querySelector('input').checked = true;
+      document.querySelectorAll(sel).forEach(x=>x.classList.remove('sel'));
+      c.classList.add('sel');
+      applyFn();
+    });
+  });
+  document.querySelectorAll(sel + ' input').forEach(r=>{
+    r.addEventListener('change', ()=>{
+      document.querySelectorAll(sel).forEach(x=>x.classList.toggle('sel', x.querySelector('input').value === r.value));
+      applyFn();
+    });
+  });
+}
+bindGrid('#modeGrid .opt-card', applyMode);
+
+// 输入监听：所有联动统一在 render() 中刷新
+document.querySelectorAll('input,select,textarea').forEach(el=>{
+  ['input','change'].forEach(ev=>el.addEventListener(ev, ()=>{ render(); }));
+});
+
+// ---------- 必填项与格式校验 ----------
+function requiredList(){
+  const req = [{id:'pr_model', label:'模型名称'}];
+  const mode = curMode();
+  if(mode === 'live_service_collection') req.push({id:'pr_pid', label:'服务进程 PID'});
+  if(mode === 'launch_service_collection'){
+    req.push({id:'pr_start', label:'服务启动脚本'});
+    req.push({id:'pr_work',  label:'Workload 驱动脚本'});
+  }
+  if(mode === 'existing_profiling_analysis'){
+    req.push({id:'pr_input', label:'Profiling 输入目录'});
+    req.push({id:'pr_out',   label:'分析结果输出目录'});
+    if(curAnalysis() === 'comparison'){
+      req.push({id:'pr_bench', label:'基准 profiling 目录'});
+      req.push({id:'pr_comp',  label:'对比 profiling 目录'});
+    }
+  }
+  return req;
+}
+
+function syntaxWarns(){
+  const warns = [];
+  const posInt = (id, name) => { if(val(id) && !/^\d+$/.test(val(id))) warns.push({id, msg: name + '应为正整数，如 20'}); };
+  posInt('pr_pid', '服务进程 PID');
+  posInt('pr_duration', '采集时长（秒）');
+  posInt('pr_warmup', '预热时长（秒）');
+  const absPath = (id, name) => { if(val(id) && !/^\//.test(val(id))) warns.push({id, msg: name + '应为服务端绝对路径（以 / 开头）'}); };
+  absPath('pr_start', '服务启动脚本');
+  absPath('pr_work', 'Workload 驱动脚本');
+  absPath('pr_root', 'Profiling 输出根目录');
+  absPath('pr_input', 'Profiling 输入目录');
+  absPath('pr_out', '分析结果输出目录');
+  absPath('pr_bench', '基准 profiling 目录');
+  absPath('pr_comp', '对比 profiling 目录');
+  return warns;
+}
+
+// ---------- 输出 ----------
+function buildJSON(){
+  const mode = curMode();
+  const out = {
+    model_name: val('pr_model'),
+    mode: mode,
+    collect_mode: val('pr_collect'),
+    analysis_mode: val('pr_analysis'),
+    duration: val('pr_duration'),
+    profiling_root: val('pr_root')
+  };
+  if(mode === 'live_service_collection'){
+    out.service_pid = val('pr_pid');
+    out.base_url = val('pr_url');
+  }else if(mode === 'launch_service_collection'){
+    out.service_start_script = val('pr_start');
+    out.workload_script = val('pr_work');
+    out.warmup_seconds = val('pr_warmup');
+  }else if(mode === 'existing_profiling_analysis'){
+    out.profiling_input_root = val('pr_input');
+    out.output_path = val('pr_out');
+    if(curAnalysis() === 'comparison'){
+      out.benchmark_profiling_path = val('pr_bench');
+      out.comparison_profiling_path = val('pr_comp');
+    }
+  }
+  return out;
+}
+
+// 轻量 JSON 语法着色
+function hl(json){
+  let e = json.replace(/[<>&]/g, m=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[m]));
+  e = e.replace(/(\s)("(?:[^"\\]|\\.)*")(\s*:)/g, '$1<span class="j-k">$2</span>$3');
+  e = e.replace(/: ("(?:[^"\\]|\\.)*")/g, ': <span class="j-s">$1</span>');
+  e = e.replace(/: (-?\d+(?:\.\d+)?)/g, ': <span class="j-n">$1</span>');
+  e = e.replace(/: (true|false|null)/g, ': <span class="j-b">$1</span>');
+  return e;
+}
+
+let lastJSON = '';
+
+function missLinks(items){
+  return items.map(it => {
+    // 提示项（syntaxWarns）只带 {id,msg}，label 从 DOM 字段标签兜底，避免链接显示 undefined
+    const lbl = it.label || (() => {
+      const f = document.querySelector('.field[data-fid="' + it.id + '"] label');
+      return f ? f.textContent.replace(/\s+/g, ' ').trim() : it.id;
+    })();
+    return '<a class="miss-link" href="#" data-jump="' + it.id + '">' + lbl + '</a>';
+  }).join('、');
+}
+function setSec(cardId, ids){
+  const el = $(cardId).querySelector('.sec-ok');
+  if(!el) return;
+  // 无必填项（如采集模式始终就绪）视为就绪
+  el.hidden = !(ids.length === 0 || ids.every(id => val(id)));
+}
+function clearWarns(){
+  document.querySelectorAll('.field.warn').forEach(f=>{
+    f.classList.remove('warn');
+    const m = f.querySelector('.warn-msg'); if(m) m.remove();
+  });
+}
+
+function render(){
+  const mode = curMode();
+  const req = requiredList(), missing = missingRequired(), warns = syntaxWarns();
+  const total = req.length, done = total - missing.length;
+
+  const built = buildJSON();
+  lastJSON = JSON.stringify(built, null, 2);
+  $('jsonOut').innerHTML = hl(lastJSON);
+
+  const fill = $('meterFill'), bar = $('meterBar');
+  const pct = total ? Math.round(done/total*100) : 0;
+  fill.style.width = pct + '%';
+  bar.classList.toggle('done', missing.length === 0);
+  $('meterState').textContent = done + ' / ' + total + ' · ' + pct + '%';
+
+  // 嵌入态「启动 Profiling」按钮：与必填完成度同口径门禁（独立态恒隐藏，不影响）
+  const lb = $('launchBtn'); if(lb) lb.disabled = missing.length > 0;
+
+  const box = $('validBox');
+  if(missing.length){
+    box.className = 'kv state-err';
+    box.innerHTML = '<span class="badge err">还差 ' + missing.length + ' 项必填</span> ' + missLinks(missing);
+  }else if(warns.length){
+    box.className = 'kv state-warn';
+    box.innerHTML = '<span class="badge warn">必填齐全，' + warns.length + ' 条格式提示</span> ' + missLinks(warns);
+  }else{
+    box.className = 'kv state-ok';
+    box.innerHTML = '<span class="badge ok">✓ 必填齐全</span> 可直接复制输出并提交给 SKILL。';
+  }
+
+  setSec('modeCard', []);
+  setSec('baseCard', ['pr_model']);
+  setSec('specCard', requiredList().slice(1).map(it => it.id));
+  syncCompare();
+
+  clearWarns();
+  warns.forEach(w=>{
+    const f = document.querySelector('.field[data-fid="' + w.id + '"]');
+    if(!f) return;
+    f.classList.add('warn');
+    let m = f.querySelector('.warn-msg');
+    if(!m){ m = document.createElement('div'); m.className = 'warn-msg'; f.appendChild(m); }
+    m.textContent = '⚠ ' + w.msg;
+  });
+
+  renderHeader(missing.length === 0);
+  renderPhases();
+  renderCmd();
+  saveDraft();
+  if(IS_EMBED) postBridge('state', { json: built, ready: missing.length === 0, warns });
+}
+
+// ---------- 头部状态 / 阶段就绪 / 触发指令预览 ----------
+function triggerText(){ return '开始 Profiling 采集（' + MODE_META[curMode()].short + '）'; }
+
+function renderHeader(ready){
+  const me = $('headMode'), ae = $('headAnalysis');
+  if(me) me.textContent = MODE_META[curMode()].label;
+  if(ae) ae.textContent = (ANALYSIS_LABEL[curAnalysis()] || curAnalysis()) + '分析';
+  const ann = $('headAnnun');
+  if(ann){
+    const tx = ann.querySelector('span');
+    ann.classList.toggle('go', ready);
+    ann.setAttribute('aria-label', ready ? '必填项齐全，可提交' : '仍有必填项待完善');
+    if(tx) tx.textContent = ready ? '就绪' : '待完善';
+  }
+}
+
+function phaseState(){
+  const mode = curMode();
+  const specIds = requiredList().slice(1).map(it => it.id);
+  return [
+    {card:'modeCard', label:'采集模式', ready: true},
+    {card:'baseCard', label:'通用参数', ready: !!val('pr_model')},
+    {card:'specCard', label:'模式专属参数', ready: specIds.every(id => val(id))}
+  ];
+}
+
+function renderPhases(){
+  const wrap = $('phaseList'); if(!wrap) return;
+  wrap.innerHTML = phaseState().map(p =>
+    '<button type="button" class="phase-row' + (p.ready ? ' ready' : '') + '" data-target="' + p.card + '">' +
+      '<i class="phase-dot"></i><span class="phase-name">' + p.label + '</span>' +
+      '<span class="phase-st">' + (p.ready ? '就绪' : '待完善') + '</span>' +
+    '</button>').join('');
+}
+$('phaseList').addEventListener('click', e=>{
+  const b = e.target.closest('.phase-row'); if(!b) return;
+  const el = $(b.dataset.target); if(!el) return;
+  el.scrollIntoView({block:'start'});
+  el.classList.add('flash');
+  setTimeout(()=>el.classList.remove('flash'), 1600);
+});
+
+function renderCmd(){
+  const el = $('cmdVal'); if(!el) return;
+  el.textContent = triggerText();
+}
+
+// ---------- 草稿持久化（localStorage） ----------
+let suppressDraftSave = false;
+function saveDraft(){
+  if(suppressDraftSave) return;
+  try{
+    const d = {};
+    document.querySelectorAll('input,select,textarea').forEach(el=>{
+      if(!el.id) return;
+      d[el.id] = (el.type === 'checkbox') ? el.checked : el.value;
+    });
+    document.querySelectorAll('input[type=radio]').forEach(r=>{ if(r.checked) d['radio:' + r.name] = r.value; });
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(d));
+  }catch(e){}
+}
+function restoreDraft(){
+  try{
+    const d = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+    // 仅 radio 状态 / 全空字段 → 视为无草稿，不提示并清理
+    const hasContent = Object.keys(d).some(k => {
+      if(k.indexOf('radio:') === 0) return false;
+      const v = d[k];
+      if(typeof v === 'boolean') return v;
+      return typeof v === 'string' && v.trim() !== '';
+    });
+    if(!hasContent){
+      try{ localStorage.removeItem(STORAGE_KEY); }catch(e){}
+      return;
+    }
+    for(const k in d){
+      if(k.indexOf('radio:') === 0){
+        const r = document.querySelector('input[name="' + k.slice(6) + '"][value="' + d[k] + '"]');
+        if(r) r.checked = true;
+      }else{
+        const el = $(k); if(!el) continue;
+        if(el.type === 'checkbox') el.checked = !!d[k];
+        else el.value = d[k];
+      }
+    }
+    showToast('已恢复上次未提交的草稿，可点「重置表单」清空');
+  }catch(e){}
+}
+function showToast(msg){
+  let t = $('toast');
+  if(!t){
+    t = document.createElement('div');
+    t.id = 'toast'; t.className = 'toast'; t.setAttribute('role', 'status');
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._t);
+  t._t = setTimeout(()=>t.classList.remove('show'), 3200);
+}
+
+// 缺失项 / 提示项点击跳转
+$('validBox').addEventListener('click', e=>{
+  const a = e.target.closest('a.miss-link'); if(!a) return;
+  e.preventDefault();
+  const el = $(a.dataset.jump); if(!el) return;
+  el.scrollIntoView({block:'center'});
+  const f = el.closest('.field'); if(!f) return;
+  f.classList.add('flash');
+  setTimeout(()=>f.classList.remove('flash'), 1600);
+});
+
+// ---------- 按钮 ----------
+function copyText(t, done){
+  if(navigator.clipboard && window.isSecureContext){
+    navigator.clipboard.writeText(t).then(done, ()=>legacyCopy(t, done));
+  }else legacyCopy(t, done);
+}
+function legacyCopy(t, done){
+  const ta = document.createElement('textarea');
+  ta.value = t;
+  ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0';
+  document.body.appendChild(ta); ta.select();
+  try{ document.execCommand('copy'); }catch(e){}
+  ta.remove(); done();
+}
+function okBtn(btn){
+  btn.textContent = '已复制 ✓';
+  clearTimeout(btn._t);
+  btn._t = setTimeout(()=>btn.textContent = btn.dataset.orig || '已复制', 1500);
+}
+
+// 嵌入态「启动 Profiling」：把启动动作转交宿主（宿主经桥收到 launch 后调用 launchCardSession）
+$('launchBtn').addEventListener('click', ()=>postBridge('launch'));
+$('copyCmdBtn').addEventListener('click', ()=>{
+  const cmd = triggerText() + '\n\n' + lastJSON;
+  copyText(cmd, ()=>okBtn($('copyCmdBtn')));
+});
+$('downloadBtn').addEventListener('click', ()=>{
+  const blob = new Blob([lastJSON], {type:'application/json'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'ascend-profiler-input.json'; a.click();
+});
+$('resetBtn').addEventListener('click', ()=>{
+  document.querySelectorAll('input[type=text],input[type=number],textarea').forEach(el=>el.value = '');
+  document.querySelectorAll('select').forEach(el=>el.selectedIndex = 0);
+  document.querySelectorAll('input[type=checkbox]').forEach(el=>el.checked = false);
+  document.querySelectorAll('input[type=radio]').forEach(el=>el.checked = false);
+  document.querySelector('#modeGrid input[value=live_service_collection]').checked = true;
+  document.querySelectorAll('.opt-card').forEach(c=>c.classList.remove('sel'));
+  document.querySelector('#modeGrid .opt-card[data-mode=live_service_collection]').classList.add('sel');
+  document.querySelectorAll('.attach').forEach(el=>el.classList.add('hidden'));
+  $('liveFields').classList.remove('hidden');
+  document.querySelectorAll('[id$="_custom"]').forEach(el=>el.classList.add('hidden'));
+  try{ localStorage.removeItem(STORAGE_KEY); }catch(e){}
+  suppressDraftSave = true;
+  applyMode();
+  suppressDraftSave = false;
+  try{ localStorage.removeItem(STORAGE_KEY); }catch(e){}
+});
+$('toggleJson').addEventListener('click', ()=>{
+  const pre = $('jsonOut'), hidden = pre.classList.toggle('hidden');
+  $('toggleJson').textContent = hidden ? '展开 JSON' : '收起 JSON';
+});
+
+// ---------- 初始化 ----------
+restoreDraft();
+applyMode();
+
+// 嵌入态：向宿主上报内容高度（撑开 iframe），并响应状态拉取请求
+if(IS_EMBED){
+  const lb = $('launchBtn'); if(lb) lb.classList.remove('hidden');  // 嵌入态才显示「启动 Profiling」
+  const reportResize = () => postBridge('resize', { height: Math.ceil(document.documentElement.scrollHeight) });
+  if(typeof ResizeObserver !== 'undefined'){
+    const ro = new ResizeObserver(reportResize);
+    ro.observe(document.body);
+  }
+  window.addEventListener('message', e => {
+    if(e.data && e.data.bridge === 'dsh-wb:artifact' && e.data.kind === 'pull'){
+      postBridge('state', { json: buildJSON(), ready: missingRequired().length === 0, warns: syntaxWarns() });
+    }
+  });
+  reportResize();
+}
+</script>
+</body>
+</html>

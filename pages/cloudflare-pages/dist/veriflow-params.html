@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>veriflow · 验证流测试台</title>
+<style>
+  :root{
+    --bg:#edf1f6; --panel:#ffffff;
+    --ink:#1b2633; --sub:#56657a; --muted:#8795a6;
+    --line:#dfe6ee; --line-strong:#cdd6e0;
+    --brand:#0e7d70; --brand-deep:#0a5c52; --brand-soft:#e4f2ef;
+    --ok:#177a4f; --ok-soft:#e4f4ec;
+    --warn:#b0570b; --warn-soft:#fcf1e2;
+    --err:#d64541; --err-soft:#fdefec;
+    --console:#0b1420; --console-ink:#d9e2ee; --console-sub:#8ea0b6;
+    --j-key:#7cc5ff; --j-str:#a7e2bd; --j-num:#f2c66d; --j-bool:#f2a0a8;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    --shadow:0 1px 2px rgba(15,23,42,.05),0 2px 8px rgba(15,23,42,.05);
+    --radius:8px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    background:var(--bg);color:var(--ink);font-size:14px;line-height:1.55;-webkit-font-smoothing:antialiased}
+
+  /* ---------- 控制台头部 ---------- */
+  header{background:linear-gradient(115deg,#0b1420 0%,#101d30 55%,#0c1a2e 100%);color:#fff;
+    padding:20px 0 18px;position:relative;overflow:hidden}
+  header::before{content:"";position:absolute;inset:0;pointer-events:none;
+    background:repeating-linear-gradient(0deg,transparent 0 23px,rgba(255,255,255,.025) 23px 24px),
+               repeating-linear-gradient(90deg,transparent 0 23px,rgba(255,255,255,.025) 23px 24px)}
+  .head{max-width:1180px;margin:0 auto;padding:0 20px;position:relative;
+    display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+  .brand h1{margin:0;font-size:20px;font-weight:700;letter-spacing:.02em}
+  .brand .slug{margin-top:3px;font-family:var(--mono);font-size:11px;color:var(--console-sub);letter-spacing:.02em}
+
+  .crumb-bar{position:sticky;top:0;z-index:30;background:#fff;border-bottom:1px solid var(--line);box-shadow:0 1px 3px rgba(15,23,42,.08)}
+  .crumb{max-width:1180px;margin:0 auto;padding:6px 20px;display:flex;align-items:center;gap:6px}
+  .crumb-back{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:var(--sub);
+    text-decoration:none;padding:3px 8px;border-radius:6px;transition:color .15s,background .15s}
+  .crumb-back:hover{color:var(--brand-deep);background:var(--brand-soft)}
+  .crumb-back:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+  .crumb-sep{color:var(--muted);user-select:none}
+  .crumb-current{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .head-state{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .chip{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--console-ink);
+    border:1px solid rgba(255,255,255,.16);border-radius:5px;padding:4px 10px;background:rgba(255,255,255,.04)}
+  .annun{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:600;color:var(--console-sub);
+    border:1px solid rgba(255,255,255,.16);border-radius:999px;padding:4px 12px;background:rgba(255,255,255,.04)}
+  .annun i{width:7px;height:7px;border-radius:50%;background:#7486a0}
+  .annun.go{color:#bdf0d1;border-color:rgba(76,214,140,.38);background:rgba(60,203,130,.08)}
+  .annun.go i{background:#3ccb82;box-shadow:0 0 8px rgba(60,203,130,.9)}
+  .head-sub{max-width:1180px;margin:9px auto 0;padding:0 20px;position:relative;
+    font-size:13px;color:var(--console-sub);line-height:1.6}
+
+  /* ---------- 布局 ---------- */
+  .wrap{max-width:1180px;margin:0 auto;padding:24px 20px 36px;display:grid;
+    grid-template-columns:minmax(0,1fr) 404px;gap:24px;align-items:start}
+  @media(max-width:980px){.wrap{grid-template-columns:1fr}}
+  footer{max-width:1180px;margin:0 auto;padding:0 20px 30px;text-align:center;color:var(--muted);font-size:11.5px}
+
+  /* ---------- 卡片 ---------- */
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:var(--shadow);padding:18px 20px;margin-bottom:18px;scroll-margin-top:14px;
+    transition:box-shadow .2s,border-color .2s}
+  .card h2{margin:0 0 6px;font-size:15px;display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+  .card h2 .tag{font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+    padding:3px 8px;border-radius:4px;background:var(--brand-soft);color:var(--brand-deep)}
+  .card .desc{color:var(--sub);font-size:12.5px;margin:0 0 16px;line-height:1.6}
+  .sec-ok{font-family:var(--mono);font-size:10px;font-weight:700;color:var(--ok);background:var(--ok-soft);
+    padding:3px 9px;border-radius:999px;margin-left:auto;white-space:nowrap}
+  .card.flash{box-shadow:0 0 0 3px var(--brand-soft);border-color:var(--brand)}
+  .subhead{font-size:12px;font-weight:700;color:var(--ink);display:flex;align-items:center;gap:8px;margin:4px 0 12px}
+  .subhead::before{content:"";width:3px;height:12px;border-radius:2px;background:var(--brand)}
+  .subnote{color:var(--sub);font-size:11.5px;margin:-6px 0 12px;line-height:1.6}
+  .attach{margin-top:16px;border-top:1px solid var(--line);padding-top:14px}
+
+  /* ---------- 表单 ---------- */
+  .field{margin-bottom:15px}
+  .field label{display:block;font-weight:600;margin-bottom:6px;font-size:13px}
+  .field .hint{color:var(--muted);font-size:11.5px;margin-top:4px;line-height:1.6}
+  .req{color:var(--err);font-weight:700;margin-left:2px}
+  .opt{color:var(--muted);font-size:11px;margin-left:4px;font-weight:500}
+  .key{font-family:var(--mono);font-size:12px}
+  .kg{color:var(--muted);font-weight:500;font-size:11px;margin-left:6px}
+  input[type=text],input[type=number],select,textarea{width:100%;padding:9px 11px;border:1px solid var(--line-strong);
+    border-radius:6px;font-size:13px;font-family:inherit;background:#fff;color:var(--ink);transition:border-color .15s,box-shadow .15s}
+  input::placeholder,textarea::placeholder{color:var(--muted)}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-soft)}
+  textarea{resize:vertical;min-height:64px;font-family:var(--mono);font-size:12px;line-height:1.6}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:560px){.row{grid-template-columns:1fr}}
+  .input-unit{display:flex;gap:8px;align-items:stretch}
+  .input-unit input[type=text]{flex:1 1 auto;min-width:0}
+  .input-unit .unit-chk{display:inline-flex;flex:0 0 auto;align-items:center;gap:6px;margin:0;padding:0 12px;
+    border:1px solid var(--line-strong);border-radius:6px;background:#fff;font-size:13px;font-weight:600;
+    white-space:nowrap;cursor:pointer;transition:border-color .15s,background .15s;user-select:none}
+  .input-unit .unit-chk input{width:auto;padding:0;margin:0;cursor:pointer;accent-color:var(--brand)}
+  .input-unit .unit-chk.on{border-color:var(--brand);background:var(--brand-soft);color:var(--brand-deep)}
+
+  /* 即时格式提示 / 跳转高亮 */
+  .field.warn input,.field.warn select,.field.warn textarea{border-color:var(--warn)}
+  .field.warn input:focus{border-color:var(--warn);box-shadow:0 0 0 3px var(--warn-soft)}
+  .warn-msg{color:var(--warn);font-size:11.5px;margin-top:4px}
+  .field.flash input,.field.flash select,.field.flash textarea{border-color:var(--err);background:var(--err-soft)}
+  .field.flash label{color:var(--err)}
+
+  /* ---------- 选择卡片 ---------- */
+  .radio-grid{display:grid;gap:10px}
+  .radio-grid.cols2{grid-template-columns:1fr 1fr}
+  .radio-grid.cols3{grid-template-columns:repeat(3,1fr)}
+  @media(max-width:560px){.radio-grid.cols2,.radio-grid.cols3{grid-template-columns:1fr}}
+  .opt-card{border:1px solid var(--line-strong);border-radius:7px;padding:12px 14px;cursor:pointer;display:flex;gap:10px;
+    align-items:flex-start;background:#fff;position:relative;transition:border-color .15s,background .15s}
+  .opt-card:hover{border-color:var(--brand)}
+  .opt-card:focus-within{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-soft)}
+  .opt-card.sel{border-color:var(--brand);background:var(--brand-soft)}
+  .opt-card.sel::after{content:"✓";position:absolute;top:9px;right:11px;font-size:12px;font-weight:700;color:var(--brand)}
+  .opt-card input{margin-top:3px;accent-color:var(--brand)}
+  .opt-card .t{font-weight:650;font-size:13px}
+  .opt-card .d{color:var(--sub);font-size:11.5px;margin-top:3px;line-height:1.55;padding-right:14px}
+
+  .section-note{background:var(--warn-soft);border:1px solid #efd8ab;color:#8a4a00;
+    border-radius:6px;padding:9px 12px;font-size:12px;margin-bottom:14px;line-height:1.6}
+  .mode-banner{margin-top:14px;padding:10px 14px 10px 12px;font-size:12.5px;line-height:1.6;
+    border-left:3px solid var(--brand);background:var(--brand-soft);color:var(--brand-deep);border-radius:6px}
+
+  /* ---------- 输出面板 ---------- */
+  .out{position:sticky;top:20px}
+  html:not([data-dsh-embed]) .out{top:44px}
+  @media(max-width:980px){.out{position:static}}
+  .out .card{margin-bottom:0}
+  .collapse-btn{float:right;font-size:12px;color:var(--brand);cursor:pointer;user-select:none;background:none;border:none;font-weight:600;padding:0}
+  .collapse-btn:focus-visible{outline:2px solid var(--brand);outline-offset:2px;border-radius:4px}
+
+  .cmdbar{display:flex;align-items:center;gap:10px;margin:0 0 12px;padding:9px 12px;border:1px dashed var(--line-strong);
+    border-radius:7px;background:#f7f9fc}
+  .cmd-label{font-size:11px;font-weight:700;color:var(--muted);flex:0 0 auto}
+  .cmd-val{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--brand-deep);overflow:hidden;
+    text-overflow:ellipsis;white-space:nowrap}
+
+  .phases{margin:0 0 14px;padding:12px 13px 8px;background:#f6f8fb;border:1px solid var(--line);border-radius:7px}
+  .phases-cap{font-size:11px;font-weight:700;color:var(--muted);margin:0 4px 4px}
+  .phase-row{display:flex;align-items:center;gap:9px;width:100%;border:none;background:none;padding:5px 4px;cursor:pointer;
+    border-radius:5px;font-family:inherit;font-size:12.5px;color:var(--sub);text-align:left}
+  .phase-row:hover{background:var(--brand-soft)}
+  .phase-row:focus-visible{outline:2px solid var(--brand);outline-offset:1px}
+  .phase-dot{width:7px;height:7px;border-radius:50%;background:#c3ccd6;flex:0 0 auto}
+  .phase-row.ready .phase-dot{background:var(--ok)}
+  .phase-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .phase-st{font-size:10.5px;font-weight:700;color:var(--muted);flex:0 0 auto}
+  .phase-row.ready{color:var(--ink)}
+  .phase-row.ready .phase-st{color:var(--ok)}
+
+  .meter{margin:0 0 12px}
+  .meter-head{display:flex;justify-content:space-between;align-items:baseline;font-size:11.5px;color:var(--muted);margin-bottom:6px;font-weight:600}
+  .meter-head .meter-state{font-variant-numeric:tabular-nums;font-weight:700;color:var(--ink)}
+  .meter-bar{height:8px;border-radius:4px;background:#e7edf4;border:1px solid #dbe3ec;overflow:hidden}
+  .meter-bar span{display:block;height:100%;width:0;border-radius:3px;background:linear-gradient(90deg,var(--brand-deep),var(--brand));transition:width .3s ease}
+  .meter-bar.done span{background:linear-gradient(90deg,#0f6b45,var(--ok))}
+
+  pre{background:var(--console);color:var(--console-ink);border:1px solid #1c2b40;border-radius:8px;padding:14px 16px;overflow:auto;max-height:420px;
+    font-size:11.5px;line-height:1.6;font-family:var(--mono);margin:0}
+  pre::-webkit-scrollbar{width:8px;height:8px}
+  pre::-webkit-scrollbar-thumb{background:#2a3c55;border-radius:4px}
+  pre::-webkit-scrollbar-track{background:transparent}
+  pre .j-k{color:var(--j-key)} pre .j-s{color:var(--j-str)} pre .j-n{color:var(--j-num)} pre .j-b{color:var(--j-bool)}
+
+  /* ---------- 按钮 / 徽标 ---------- */
+  .btn{display:inline-flex;align-items:center;gap:6px;border:none;border-radius:6px;padding:9px 15px;
+    font-size:13px;font-weight:600;cursor:pointer;transition:.15s;font-family:inherit}
+  .btn:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+  .btn.primary{background:var(--brand);color:#fff}
+  .btn.primary:hover{background:var(--brand-deep)}
+  .btn.ghost{background:#eef2f7;color:var(--ink);border:1px solid var(--line)}
+  .btn.ghost:hover{background:#e3e9f0}
+  .btn-row{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
+  .badge{display:inline-block;font-size:11px;padding:2px 8px;border-radius:6px;background:#eef2f7;color:var(--sub);font-weight:600}
+  .badge.ok{background:var(--ok-soft);color:var(--ok)}
+  .badge.warn{background:var(--warn-soft);color:var(--warn)}
+  .badge.err{background:var(--err-soft);color:var(--err)}
+  .kv{font-size:12px;color:var(--sub);margin:2px 0 10px;line-height:1.7}
+  .miss-link{color:var(--err);text-decoration:none;border-bottom:1px dotted currentColor}
+  .miss-link:hover{text-decoration:underline}
+  #validBox.state-warn .miss-link{color:var(--warn)}
+
+  .toast{position:fixed;right:20px;bottom:20px;z-index:50;background:var(--console);color:var(--console-ink);
+    font-size:12.5px;padding:10px 16px;border-radius:8px;box-shadow:0 8px 24px rgba(10,18,30,.35);
+    border:1px solid rgba(255,255,255,.1);opacity:0;transform:translateY(8px);transition:opacity .25s,transform .25s;
+    pointer-events:none;max-width:340px;line-height:1.5}
+  .toast.show{opacity:1;transform:none}
+
+  .hidden{display:none!important}
+
+  @media (prefers-reduced-motion:reduce){
+    *{transition:none!important;animation:none!important}
+    html{scroll-behavior:auto}
+  }
+
+  /* ---------- 嵌入模式（DSH 工作台 iframe） ----------
+     由宿主在 srcDoc 前置注入 window.__DASH_EMBED__=true 开启：
+     隐藏站点级头/尾与「复制触发指令」，显示「启动测试」按钮
+     （启动动作经桥转交宿主，替换独立态的聊天粘贴闭环），
+     去掉宽度上限、背景透明以融入宿主页面。独立部署时不受影响。 */
+  html[data-dsh-embed] .crumb-bar,
+  html[data-dsh-embed] header,
+  html[data-dsh-embed] footer{display:none}
+  html[data-dsh-embed] body{background:transparent}
+  html[data-dsh-embed] .wrap{max-width:none;padding:0}
+  html[data-dsh-embed] #copyCmdBtn{display:none}
+</style>
+</head>
+<body>
+<div class="crumb-bar">
+  <div class="crumb">
+    <a class="crumb-back" href="workbench.html">← 返回工作台</a>
+    <span class="crumb-sep" aria-hidden="true">/</span>
+    <span class="crumb-current">验证流测试台</span>
+  </div>
+</div>
+
+<header>
+  <div class="head">
+    <div class="brand">
+      <h1>验证流测试台</h1>
+      <div class="slug">veriflow</div>
+    </div>
+    <div class="head-state">
+      <span class="chip" id="headMode">正式运行</span>
+      <span class="chip" id="headCases">全量用例</span>
+      <div class="annun" id="headAnnun" role="status" aria-label="仍有必填项待完善"><i></i><span>待完善</span></div>
+    </div>
+  </div>
+  <p class="head-sub">为 LLM 推理服务的验证流测试（VeriFlow）收集必要参数，实时生成可直接提交给 veriflow SKILL 的结构化 JSON。</p>
+</header>
+
+<div class="wrap">
+  <!-- ============ 左：表单区 ============ -->
+  <main>
+    <!-- ① 运行方式 -->
+    <section class="card" id="modeCard">
+      <h2>运行方式 <span class="tag" id="modeBadge">正式运行</span> <span class="sec-ok" hidden>✓ 就绪</span></h2>
+      <p class="desc">本次测试运行的方式不可自动推断，须你显式选择。三种方式共用同一份项目配置。</p>
+      <div class="radio-grid" id="modeGrid">
+        <label class="opt-card sel" data-mode="run">
+          <input type="radio" name="mode" value="run" checked>
+          <div><div class="t">正式运行</div>
+            <div class="d">执行全部或筛选的测试用例，失败不中断，最终产出通过/失败全景报告。</div></div>
+        </label>
+        <label class="opt-card" data-mode="dry_run">
+          <input type="radio" name="mode" value="dry_run">
+          <div><div class="t">预览 dry-run · 打印命令</div>
+            <div class="d">打印各节点服务与测试命令，不启动服务、不执行测试；确认无误后切换为正式运行。</div></div>
+        </label>
+        <label class="opt-card" data-mode="list">
+          <input type="radio" name="mode" value="list">
+          <div><div class="t">列出项目 · 核对配置</div>
+            <div class="d">列出项目中的模型 / 数据集 / 测试用例（--list），用于核对配置内容，不执行测试。</div></div>
+        </label>
+      </div>
+      <div class="mode-banner" id="modeBanner">本次将执行筛选的全部测试用例，失败不中断，最终产出通过/失败全景报告。</div>
+    </section>
+
+    <!-- ② 项目配置 -->
+    <section class="card" id="configCard">
+      <h2><span class="tag">CONFIG</span>项目配置 <span class="sec-ok" hidden>✓ 就绪</span></h2>
+      <p class="desc">一个 YAML 配置 = 一个项目：定义模型、数据集、节点、vllm 参数与测试用例。三种运行方式都以它为准。</p>
+      <div class="field" data-fid="vf_config"><label for="vf_config">项目配置文件 <span class="req">*</span></label>
+        <input type="text" id="vf_config" placeholder="/workspace/projects/gsm8k.yaml 或项目名">
+        <div class="hint">-c/--config；服务端 YAML 配置路径（绝对路径）或已注册的项目名</div></div>
+    </section>
+
+    <!-- ③ 执行参数 -->
+    <section class="card" id="paramCard">
+      <h2><span class="tag">PARAMS</span>执行参数 <span class="opt" style="margin-left:auto;white-space:nowrap">全部可选</span> <span class="sec-ok" hidden>✓ 就绪</span></h2>
+      <p class="desc">全部可选：留空即按项目配置的默认行为执行。</p>
+      <div class="row">
+        <div class="field" data-fid="vf_case"><label for="vf_case">测试用例筛选 <span class="opt">可选</span></label>
+          <input type="text" id="vf_case" placeholder="如 acc-gsm8k,perf-gsm8k（留空运行全部用例）">
+          <div class="hint">--test-case，逗号分隔多个用例名；失败不中断</div></div>
+        <div class="field" data-fid="vf_limit"><label for="vf_limit">样本数限制 <span class="opt">可选</span></label>
+          <input type="number" id="vf_limit" placeholder="如 8（快速冒烟）">
+          <div class="hint">--limit 统一回退：evalscope/lm_eval → --limit，vllm bench → --num-prompts，evalscope perf → --number</div></div>
+      </div>
+      <div class="field" data-fid="vf_out"><label for="vf_out">结果输出目录 <span class="opt">可选 · 默认 results/</span></label>
+        <input type="text" id="vf_out" placeholder="默认 results/">
+        <div class="hint">--results-dir 覆盖结果输出目录；每次运行生成 run_* 子目录存放报告与日志</div></div>
+    </section>
+  </main>
+
+  <!-- ============ 右：输出区 ============ -->
+  <aside class="out">
+    <section class="card">
+      <h2>参数输出 <button class="collapse-btn" id="toggleJson">收起 JSON</button></h2>
+      <p class="desc">随表单实时更新，就绪后复制提交给 SKILL。</p>
+      <div class="cmdbar"><span class="cmd-label">触发指令</span><code class="cmd-val" id="cmdVal">开始验证流测试（正式运行）</code></div>
+      <div class="phases">
+        <p class="phases-cap">阶段就绪</p>
+        <div id="phaseList"></div>
+      </div>
+      <div class="meter">
+        <div class="meter-head"><span>必填完成度</span><span class="meter-state" id="meterState">0 / 0</span></div>
+        <div class="meter-bar" id="meterBar"><span id="meterFill"></span></div>
+      </div>
+      <div id="validBox" class="kv" aria-live="polite"></div>
+      <pre id="jsonOut"></pre>
+      <div class="btn-row">
+        <button class="btn primary hidden" id="launchBtn" disabled>启动测试</button>
+        <button class="btn primary" id="copyCmdBtn" data-orig="复制触发指令">复制触发指令</button>
+        <button class="btn ghost" id="downloadBtn">下载 JSON</button>
+        <button class="btn ghost" id="resetBtn">重置表单</button>
+      </div>
+    </section>
+  </aside>
+</div>
+
+<footer>参数采集与结构化输出工具 · 输出的 JSON 可直接提交给 veriflow SKILL</footer>
+
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const val = id => { const el = $(id); return el ? (el.value || "").trim() : ""; };
+
+// ── 嵌入模式桥（DSH 工作台 iframe） ──
+// 宿主以 iframe(srcDoc) 引入本页时，会在文档最前注入
+// window.__DASH_EMBED__ = true。嵌入态通过 postMessage 向宿主同步
+// 最新 JSON / 就绪态 / 内容高度；独立部署时 IS_EMBED=false，这些全为 no-op。
+const IS_EMBED = window.__DASH_EMBED__ === true;
+if(IS_EMBED) document.documentElement.setAttribute('data-dsh-embed', '');
+function postBridge(kind, extra){
+  if(!IS_EMBED) return;
+  try{
+    const msg = Object.assign({ bridge:'dsh-wb:artifact', kind, cardId:'veriflow' }, extra || {});
+    (window.parent || window).postMessage(msg, '*');
+  }catch(e){}
+}
+// 当前未满足的必填项（render() 复用同一口径，保持单一真相）
+function missingRequired(){
+  return requiredList().filter(f => !val(f.id));
+}
+
+const MODE_META = {
+  run:     { label:'正式运行', short:'正式运行',
+    banner:'本次将执行筛选的全部测试用例，失败不中断，最终产出通过/失败全景报告。' },
+  dry_run: { label:'预览 dry-run', short:'预览 dry-run',
+    banner:'仅打印各节点服务与测试命令，不启动服务、不执行测试；确认无误后可切换为正式运行。' },
+  list:    { label:'列出项目', short:'列出项目',
+    banner:'列出项目中的模型 / 数据集 / 测试用例（--list），用于核对配置内容，不执行测试。' }
+};
+
+const STORAGE_KEY = 'veriflow.draft.v1';
+
+function curMode(){ const r=document.querySelector('input[name=mode]:checked'); return r ? r.value : 'run'; }
+
+// ---------- 模式 联动 ----------
+function applyMode(){
+  const mode = curMode(), meta = MODE_META[mode];
+  $('modeBadge').textContent = meta.label;
+  $('modeBanner').textContent = meta.banner;
+  $('headMode').textContent = meta.label;
+  render();
+}
+
+// ---------- 选择卡片高亮（含键盘方向键切换） ----------
+function bindGrid(sel, applyFn){
+  document.querySelectorAll(sel).forEach(c=>{
+    c.addEventListener('click', ()=>{
+      c.querySelector('input').checked = true;
+      document.querySelectorAll(sel).forEach(x=>x.classList.remove('sel'));
+      c.classList.add('sel');
+      applyFn();
+    });
+  });
+  document.querySelectorAll(sel + ' input').forEach(r=>{
+    r.addEventListener('change', ()=>{
+      document.querySelectorAll(sel).forEach(x=>x.classList.toggle('sel', x.querySelector('input').value === r.value));
+      applyFn();
+    });
+  });
+}
+bindGrid('#modeGrid .opt-card', applyMode);
+
+// 输入监听：所有联动统一在 render() 中刷新
+document.querySelectorAll('input,select,textarea').forEach(el=>{
+  ['input','change'].forEach(ev=>el.addEventListener(ev, ()=>{ render(); }));
+});
+
+// ---------- 必填项与格式校验 ----------
+function requiredList(){
+  // 运行方式恒有值；唯一硬依赖是项目配置（--config）
+  return [{id:'vf_config', label:'项目配置文件'}];
+}
+
+function syntaxWarns(){
+  const warns = [];
+  const c = val('vf_config');
+  if(c && /[\/\\]/.test(c) && !/^\//.test(c)){
+    warns.push({id:'vf_config', msg:'若为路径应为服务端绝对路径（以 / 开头）；也可为已注册项目名'});
+  }
+  if(val('vf_limit') && !/^\d+$/.test(val('vf_limit'))){
+    warns.push({id:'vf_limit', msg:'样本数限制应为正整数，如 8'});
+  }
+  if(val('vf_case') && /,\s*,|^\s*,|,\s*$|[\s，]/.test(val('vf_case'))){
+    warns.push({id:'vf_case', msg:'用例名用英文逗号分隔，勿留空段或含空格/全角逗号'});
+  }
+  return warns;
+}
+
+// ---------- 输出 ----------
+function buildJSON(){
+  return {
+    run_mode: curMode(),
+    config: val('vf_config'),
+    test_case: val('vf_case'),
+    limit: val('vf_limit'),
+    results_dir: val('vf_out')
+  };
+}
+
+// 轻量 JSON 语法着色
+function hl(json){
+  let e = json.replace(/[<>&]/g, m=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[m]));
+  e = e.replace(/(\s)("(?:[^"\\]|\\.)*")(\s*:)/g, '$1<span class="j-k">$2</span>$3');
+  e = e.replace(/: ("(?:[^"\\]|\\.)*")/g, ': <span class="j-s">$1</span>');
+  e = e.replace(/: (-?\d+(?:\.\d+)?)/g, ': <span class="j-n">$1</span>');
+  e = e.replace(/: (true|false|null)/g, ': <span class="j-b">$1</span>');
+  return e;
+}
+
+let lastJSON = '';
+
+function missLinks(items){
+  return items.map(it => {
+    // 提示项（syntaxWarns）只带 {id,msg}，label 从 DOM 字段标签兜底，避免链接显示 undefined
+    const lbl = it.label || (() => {
+      const f = document.querySelector('.field[data-fid="' + it.id + '"] label');
+      return f ? f.textContent.replace(/\s+/g, ' ').trim() : it.id;
+    })();
+    return '<a class="miss-link" href="#" data-jump="' + it.id + '">' + lbl + '</a>';
+  }).join('、');
+}
+function setSec(cardId, ids){
+  const el = $(cardId).querySelector('.sec-ok');
+  if(!el) return;
+  // 无必填项（如运行方式 / 全部可选的执行参数）视为就绪
+  el.hidden = !(ids.length === 0 || ids.every(id => val(id)));
+}
+function clearWarns(){
+  document.querySelectorAll('.field.warn').forEach(f=>{
+    f.classList.remove('warn');
+    const m = f.querySelector('.warn-msg'); if(m) m.remove();
+  });
+}
+
+function render(){
+  const req = requiredList(), missing = missingRequired(), warns = syntaxWarns();
+  const total = req.length, done = total - missing.length;
+
+  const built = buildJSON();
+  lastJSON = JSON.stringify(built, null, 2);
+  $('jsonOut').innerHTML = hl(lastJSON);
+
+  const fill = $('meterFill'), bar = $('meterBar');
+  const pct = total ? Math.round(done/total*100) : 0;
+  fill.style.width = pct + '%';
+  bar.classList.toggle('done', missing.length === 0);
+  $('meterState').textContent = done + ' / ' + total + ' · ' + pct + '%';
+
+  // 嵌入态「启动测试」按钮：与必填完成度同口径门禁（独立态恒隐藏，不影响）
+  const lb = $('launchBtn'); if(lb) lb.disabled = missing.length > 0;
+
+  const box = $('validBox');
+  if(missing.length){
+    box.className = 'kv state-err';
+    box.innerHTML = '<span class="badge err">还差 ' + missing.length + ' 项必填</span> ' + missLinks(missing);
+  }else if(warns.length){
+    box.className = 'kv state-warn';
+    box.innerHTML = '<span class="badge warn">必填齐全，' + warns.length + ' 条格式提示</span> ' + missLinks(warns);
+  }else{
+    box.className = 'kv state-ok';
+    box.innerHTML = '<span class="badge ok">✓ 必填齐全</span> 可直接复制输出并提交给 SKILL。';
+  }
+
+  setSec('modeCard', []);
+  setSec('configCard', ['vf_config']);
+  setSec('paramCard', []);
+
+  clearWarns();
+  warns.forEach(w=>{
+    const f = document.querySelector('.field[data-fid="' + w.id + '"]');
+    if(!f) return;
+    f.classList.add('warn');
+    let m = f.querySelector('.warn-msg');
+    if(!m){ m = document.createElement('div'); m.className = 'warn-msg'; f.appendChild(m); }
+    m.textContent = '⚠ ' + w.msg;
+  });
+
+  renderHeader(missing.length === 0);
+  renderPhases();
+  renderCmd();
+  saveDraft();
+  if(IS_EMBED) postBridge('state', { json: built, ready: missing.length === 0, warns });
+}
+
+// ---------- 头部状态 / 阶段就绪 / 触发指令预览 ----------
+function triggerText(){ return '开始验证流测试（' + MODE_META[curMode()].short + '）'; }
+
+function renderHeader(ready){
+  const me = $('headMode'), ce = $('headCases');
+  if(me) me.textContent = MODE_META[curMode()].label;
+  if(ce) ce.textContent = val('vf_case') ? '筛选用例' : '全量用例';
+  const ann = $('headAnnun');
+  if(ann){
+    const tx = ann.querySelector('span');
+    ann.classList.toggle('go', ready);
+    ann.setAttribute('aria-label', ready ? '必填项齐全，可提交' : '仍有必填项待完善');
+    if(tx) tx.textContent = ready ? '就绪' : '待完善';
+  }
+}
+
+function phaseState(){
+  return [
+    {card:'modeCard',   label:'运行方式', ready: true},
+    {card:'configCard', label:'项目配置', ready: !!val('vf_config')},
+    {card:'paramCard',  label:'执行参数（可选）', ready: true}
+  ];
+}
+
+function renderPhases(){
+  const wrap = $('phaseList'); if(!wrap) return;
+  wrap.innerHTML = phaseState().map(p =>
+    '<button type="button" class="phase-row' + (p.ready ? ' ready' : '') + '" data-target="' + p.card + '">' +
+      '<i class="phase-dot"></i><span class="phase-name">' + p.label + '</span>' +
+      '<span class="phase-st">' + (p.ready ? '就绪' : '待完善') + '</span>' +
+    '</button>').join('');
+}
+$('phaseList').addEventListener('click', e=>{
+  const b = e.target.closest('.phase-row'); if(!b) return;
+  const el = $(b.dataset.target); if(!el) return;
+  el.scrollIntoView({block:'start'});
+  el.classList.add('flash');
+  setTimeout(()=>el.classList.remove('flash'), 1600);
+});
+
+function renderCmd(){
+  const el = $('cmdVal'); if(!el) return;
+  el.textContent = triggerText();
+}
+
+// ---------- 草稿持久化（localStorage） ----------
+let suppressDraftSave = false;
+function saveDraft(){
+  if(suppressDraftSave) return;
+  try{
+    const d = {};
+    document.querySelectorAll('input,select,textarea').forEach(el=>{
+      if(!el.id) return;
+      d[el.id] = (el.type === 'checkbox') ? el.checked : el.value;
+    });
+    document.querySelectorAll('input[type=radio]').forEach(r=>{ if(r.checked) d['radio:' + r.name] = r.value; });
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(d));
+  }catch(e){}
+}
+function restoreDraft(){
+  try{
+    const d = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+    // 仅 radio 状态 / 全空字段 → 视为无草稿，不提示并清理
+    const hasContent = Object.keys(d).some(k => {
+      if(k.indexOf('radio:') === 0) return false;
+      const v = d[k];
+      if(typeof v === 'boolean') return v;
+      return typeof v === 'string' && v.trim() !== '';
+    });
+    if(!hasContent){
+      try{ localStorage.removeItem(STORAGE_KEY); }catch(e){}
+      return;
+    }
+    for(const k in d){
+      if(k.indexOf('radio:') === 0){
+        const r = document.querySelector('input[name="' + k.slice(6) + '"][value="' + d[k] + '"]');
+        if(r) r.checked = true;
+      }else{
+        const el = $(k); if(!el) continue;
+        if(el.type === 'checkbox') el.checked = !!d[k];
+        else el.value = d[k];
+      }
+    }
+    showToast('已恢复上次未提交的草稿，可点「重置表单」清空');
+  }catch(e){}
+}
+function showToast(msg){
+  let t = $('toast');
+  if(!t){
+    t = document.createElement('div');
+    t.id = 'toast'; t.className = 'toast'; t.setAttribute('role', 'status');
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._t);
+  t._t = setTimeout(()=>t.classList.remove('show'), 3200);
+}
+
+// 缺失项 / 提示项点击跳转
+$('validBox').addEventListener('click', e=>{
+  const a = e.target.closest('a.miss-link'); if(!a) return;
+  e.preventDefault();
+  const el = $(a.dataset.jump); if(!el) return;
+  el.scrollIntoView({block:'center'});
+  const f = el.closest('.field'); if(!f) return;
+  f.classList.add('flash');
+  setTimeout(()=>f.classList.remove('flash'), 1600);
+});
+
+// ---------- 按钮 ----------
+function copyText(t, done){
+  if(navigator.clipboard && window.isSecureContext){
+    navigator.clipboard.writeText(t).then(done, ()=>legacyCopy(t, done));
+  }else legacyCopy(t, done);
+}
+function legacyCopy(t, done){
+  const ta = document.createElement('textarea');
+  ta.value = t;
+  ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0';
+  document.body.appendChild(ta); ta.select();
+  try{ document.execCommand('copy'); }catch(e){}
+  ta.remove(); done();
+}
+function okBtn(btn){
+  btn.textContent = '已复制 ✓';
+  clearTimeout(btn._t);
+  btn._t = setTimeout(()=>btn.textContent = btn.dataset.orig || '已复制', 1500);
+}
+
+// 嵌入态「启动测试」：把启动动作转交宿主（宿主经桥收到 launch 后调用 launchCardSession）
+$('launchBtn').addEventListener('click', ()=>postBridge('launch'));
+$('copyCmdBtn').addEventListener('click', ()=>{
+  const cmd = triggerText() + '\n\n' + lastJSON;
+  copyText(cmd, ()=>okBtn($('copyCmdBtn')));
+});
+$('downloadBtn').addEventListener('click', ()=>{
+  const blob = new Blob([lastJSON], {type:'application/json'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'veriflow-input.json'; a.click();
+});
+$('resetBtn').addEventListener('click', ()=>{
+  document.querySelectorAll('input[type=text],input[type=number],textarea').forEach(el=>el.value = '');
+  document.querySelectorAll('select').forEach(el=>el.selectedIndex = 0);
+  document.querySelectorAll('input[type=checkbox]').forEach(el=>el.checked = false);
+  document.querySelectorAll('input[type=radio]').forEach(el=>el.checked = false);
+  document.querySelector('#modeGrid input[value=run]').checked = true;
+  document.querySelectorAll('.opt-card').forEach(c=>c.classList.remove('sel'));
+  document.querySelector('#modeGrid .opt-card[data-mode=run]').classList.add('sel');
+  document.querySelectorAll('.attach').forEach(el=>el.classList.add('hidden'));
+  document.querySelectorAll('[id$="_custom"]').forEach(el=>el.classList.add('hidden'));
+  try{ localStorage.removeItem(STORAGE_KEY); }catch(e){}
+  suppressDraftSave = true;
+  applyMode();
+  suppressDraftSave = false;
+  try{ localStorage.removeItem(STORAGE_KEY); }catch(e){}
+});
+$('toggleJson').addEventListener('click', ()=>{
+  const pre = $('jsonOut'), hidden = pre.classList.toggle('hidden');
+  $('toggleJson').textContent = hidden ? '展开 JSON' : '收起 JSON';
+});
+
+// ---------- 初始化 ----------
+restoreDraft();
+applyMode();
+
+// 嵌入态：向宿主上报内容高度（撑开 iframe），并响应状态拉取请求
+if(IS_EMBED){
+  const lb = $('launchBtn'); if(lb) lb.classList.remove('hidden');  // 嵌入态才显示「启动测试」
+  const reportResize = () => postBridge('resize', { height: Math.ceil(document.documentElement.scrollHeight) });
+  if(typeof ResizeObserver !== 'undefined'){
+    const ro = new ResizeObserver(reportResize);
+    ro.observe(document.body);
+  }
+  window.addEventListener('message', e => {
+    if(e.data && e.data.bridge === 'dsh-wb:artifact' && e.data.kind === 'pull'){
+      postBridge('state', { json: buildJSON(), ready: missingRequired().length === 0, warns: syntaxWarns() });
+    }
+  });
+  reportResize();
+}
+</script>
+</body>
+</html>

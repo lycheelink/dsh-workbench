@@ -1,0 +1,13 @@
+node_modules/
+lib/
+*.tgz
+# vendored real typert-loader/registry releases (test/rc-verify.mjs)
+.rc-verify/
+# runtime workdir of scene-agent test runs (mssprofiler deploy artifacts)
+mssprofiler-run/
+# pages / publish (pages/publish.sh): Cloudflare credentials — NEVER commit
+publish.env
+# wrangler local cache + local config
+.wrangler/
+**/settings.local.json
+.DS_Store

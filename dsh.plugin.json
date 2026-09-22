@@ -1,0 +1,12 @@
+{
+  "name": "dsh-workbench",
+  "description": "Enterprise Agent Workbench: scene-card grid with dynamic forms, session launch and control room monitoring",
+  "version": "0.1.0",
+  "entry": {
+    "name": "dsh-workbench",
+    "inject": []
+  },
+  "client": {
+    "platform": "web"
+  }
+}

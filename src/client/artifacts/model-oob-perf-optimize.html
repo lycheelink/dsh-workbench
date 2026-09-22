@@ -1,0 +1,1076 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>model-oob-perf-optimize · 寻优参数采集台</title>
+<style>
+  :root{
+    --bg:#edf1f6; --panel:#ffffff;
+    --ink:#1b2633; --sub:#56657a; --muted:#8795a6;
+    --line:#dfe6ee; --line-strong:#cdd6e0;
+    --brand:#0e7d70; --brand-deep:#0a5c52; --brand-soft:#e4f2ef;
+    --ok:#177a4f; --ok-soft:#e4f4ec;
+    --warn:#b0570b; --warn-soft:#fcf1e2;
+    --err:#d64541; --err-soft:#fdefec;
+    --console:#0b1420; --console-ink:#d9e2ee; --console-sub:#8ea0b6;
+    --j-key:#7cc5ff; --j-str:#a7e2bd; --j-num:#f2c66d; --j-bool:#f2a0a8;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    --shadow:0 1px 2px rgba(15,23,42,.05),0 2px 8px rgba(15,23,42,.05);
+    --radius:8px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    background:var(--bg);color:var(--ink);font-size:14px;line-height:1.55;-webkit-font-smoothing:antialiased}
+
+  /* ---------- 控制台头部 ---------- */
+  header{background:linear-gradient(115deg,#0b1420 0%,#101d30 55%,#0c1a2e 100%);color:#fff;
+    padding:20px 0 18px;position:relative;overflow:hidden}
+  header::before{content:"";position:absolute;inset:0;pointer-events:none;
+    background:repeating-linear-gradient(0deg,transparent 0 23px,rgba(255,255,255,.025) 23px 24px),
+               repeating-linear-gradient(90deg,transparent 0 23px,rgba(255,255,255,.025) 23px 24px)}
+  .head{max-width:1180px;margin:0 auto;padding:0 20px;position:relative;
+    display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+  .brand h1{margin:0;font-size:20px;font-weight:700;letter-spacing:.02em}
+  .brand .slug{margin-top:3px;font-family:var(--mono);font-size:11px;color:var(--console-sub);letter-spacing:.02em}
+  .crumb-bar{position:sticky;top:0;z-index:30;background:#fff;border-bottom:1px solid var(--line);box-shadow:0 1px 3px rgba(15,23,42,.08)}
+  .crumb{max-width:1180px;margin:0 auto;padding:6px 20px;display:flex;align-items:center;gap:6px}
+  .crumb-back{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:var(--sub);
+    text-decoration:none;padding:3px 8px;border-radius:6px;transition:color .15s,background .15s}
+  .crumb-back:hover{color:var(--brand-deep);background:var(--brand-soft)}
+  .crumb-back:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+  .crumb-sep{color:var(--muted);user-select:none}
+  .crumb-current{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .head-state{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .chip{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--console-ink);
+    border:1px solid rgba(255,255,255,.16);border-radius:5px;padding:4px 10px;background:rgba(255,255,255,.04)}
+  .annun{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:600;color:var(--console-sub);
+    border:1px solid rgba(255,255,255,.16);border-radius:999px;padding:4px 12px;background:rgba(255,255,255,.04)}
+  .annun i{width:7px;height:7px;border-radius:50%;background:#7486a0}
+  .annun.go{color:#bdf0d1;border-color:rgba(76,214,140,.38);background:rgba(60,203,130,.08)}
+  .annun.go i{background:#3ccb82;box-shadow:0 0 8px rgba(60,203,130,.9)}
+  .head-sub{max-width:1180px;margin:9px auto 0;padding:0 20px;position:relative;
+    font-size:13px;color:var(--console-sub);line-height:1.6}
+
+  /* ---------- 布局 ---------- */
+  .wrap{max-width:1180px;margin:0 auto;padding:24px 20px 36px;display:grid;
+    grid-template-columns:minmax(0,1fr) 404px;gap:24px;align-items:start}
+  @media(max-width:980px){.wrap{grid-template-columns:1fr}}
+  footer{max-width:1180px;margin:0 auto;padding:0 20px 30px;text-align:center;color:var(--muted);font-size:11.5px}
+
+  /* ---------- 卡片 ---------- */
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:var(--shadow);padding:18px 20px;margin-bottom:18px;scroll-margin-top:14px;
+    transition:box-shadow .2s,border-color .2s}
+  .card h2{margin:0 0 6px;font-size:15px;display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+  .card h2 .tag{font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+    padding:3px 8px;border-radius:4px;background:var(--brand-soft);color:var(--brand-deep)}
+  .card .desc{color:var(--sub);font-size:12.5px;margin:0 0 16px;line-height:1.6}
+  .sec-ok{font-family:var(--mono);font-size:10px;font-weight:700;color:var(--ok);background:var(--ok-soft);
+    padding:3px 9px;border-radius:999px;margin-left:auto;white-space:nowrap}
+  .card.flash{box-shadow:0 0 0 3px var(--brand-soft);border-color:var(--brand)}
+  .subhead{font-size:12px;font-weight:700;color:var(--ink);display:flex;align-items:center;gap:8px;margin:4px 0 12px}
+  .subhead::before{content:"";width:3px;height:12px;border-radius:2px;background:var(--brand)}
+  .subnote{color:var(--sub);font-size:11.5px;margin:-6px 0 12px;line-height:1.6}
+  .attach{margin-top:16px;border-top:1px solid var(--line);padding-top:14px}
+
+  /* ---------- 表单 ---------- */
+  .field{margin-bottom:15px}
+  .field label{display:block;font-weight:600;margin-bottom:6px;font-size:13px}
+  .field .hint{color:var(--muted);font-size:11.5px;margin-top:4px;line-height:1.6}
+  .req{color:var(--err);font-weight:700;margin-left:2px}
+  .opt{color:var(--muted);font-size:11px;margin-left:4px;font-weight:500}
+  .key{font-family:var(--mono);font-size:12px}
+  .kg{color:var(--muted);font-weight:500;font-size:11px;margin-left:6px}
+  input[type=text],input[type=number],select,textarea{width:100%;padding:9px 11px;border:1px solid var(--line-strong);
+    border-radius:6px;font-size:13px;font-family:inherit;background:#fff;color:var(--ink);transition:border-color .15s,box-shadow .15s}
+  input::placeholder,textarea::placeholder{color:var(--muted)}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-soft)}
+  textarea{resize:vertical;min-height:64px;font-family:var(--mono);font-size:12px;line-height:1.6}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:560px){.row{grid-template-columns:1fr}}
+  .input-unit{display:flex;gap:8px;align-items:stretch}
+  .input-unit input[type=text]{flex:1 1 auto;min-width:0}
+  .input-unit .unit-chk{display:inline-flex;flex:0 0 auto;align-items:center;gap:6px;margin:0;padding:0 12px;
+    border:1px solid var(--line-strong);border-radius:6px;background:#fff;font-size:13px;font-weight:600;
+    white-space:nowrap;cursor:pointer;transition:border-color .15s,background .15s;user-select:none}
+  .input-unit .unit-chk input{width:auto;padding:0;margin:0;cursor:pointer;accent-color:var(--brand)}
+  .input-unit .unit-chk.on{border-color:var(--brand);background:var(--brand-soft);color:var(--brand-deep)}
+
+  /* 即时格式提示 / 跳转高亮 */
+  .field.warn input,.field.warn select,.field.warn textarea{border-color:var(--warn)}
+  .field.warn input:focus{border-color:var(--warn);box-shadow:0 0 0 3px var(--warn-soft)}
+  .warn-msg{color:var(--warn);font-size:11.5px;margin-top:4px}
+  .field.flash input,.field.flash select,.field.flash textarea{border-color:var(--err);background:var(--err-soft)}
+  .field.flash label{color:var(--err)}
+
+  /* ---------- 选择卡片 ---------- */
+  .radio-grid{display:grid;gap:10px}
+  .radio-grid.cols2{grid-template-columns:1fr 1fr}
+  .radio-grid.cols3{grid-template-columns:repeat(3,1fr)}
+  @media(max-width:560px){.radio-grid.cols2,.radio-grid.cols3{grid-template-columns:1fr}}
+  .opt-card{border:1px solid var(--line-strong);border-radius:7px;padding:12px 14px;cursor:pointer;display:flex;gap:10px;
+    align-items:flex-start;background:#fff;position:relative;transition:border-color .15s,background .15s}
+  .opt-card:hover{border-color:var(--brand)}
+  .opt-card:focus-within{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-soft)}
+  .opt-card.sel{border-color:var(--brand);background:var(--brand-soft)}
+  .opt-card.sel::after{content:"✓";position:absolute;top:9px;right:11px;font-size:12px;font-weight:700;color:var(--brand)}
+  .opt-card input{margin-top:3px;accent-color:var(--brand)}
+  .opt-card .t{font-weight:650;font-size:13px}
+  .opt-card .d{color:var(--sub);font-size:11.5px;margin-top:3px;line-height:1.55;padding-right:14px}
+
+  .section-note{background:var(--warn-soft);border:1px solid #efd8ab;color:#8a4a00;
+    border-radius:6px;padding:9px 12px;font-size:12px;margin-bottom:14px;line-height:1.6}
+  .mode-banner{margin-top:14px;padding:10px 14px 10px 12px;font-size:12.5px;line-height:1.6;
+    border-left:3px solid var(--brand);background:var(--brand-soft);color:var(--brand-deep);border-radius:6px}
+
+  /* ---------- 输出面板 ---------- */
+  .out{position:sticky;top:20px}
+  html:not([data-dsh-embed]) .out{top:44px}
+  @media(max-width:980px){.out{position:static}}
+  .out .card{margin-bottom:0}
+  .collapse-btn{float:right;font-size:12px;color:var(--brand);cursor:pointer;user-select:none;background:none;border:none;font-weight:600;padding:0}
+  .collapse-btn:focus-visible{outline:2px solid var(--brand);outline-offset:2px;border-radius:4px}
+
+  .cmdbar{display:flex;align-items:center;gap:10px;margin:0 0 12px;padding:9px 12px;border:1px dashed var(--line-strong);
+    border-radius:7px;background:#f7f9fc}
+  .cmd-label{font-size:11px;font-weight:700;color:var(--muted);flex:0 0 auto}
+  .cmd-val{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--brand-deep);overflow:hidden;
+    text-overflow:ellipsis;white-space:nowrap}
+
+  .phases{margin:0 0 14px;padding:12px 13px 8px;background:#f6f8fb;border:1px solid var(--line);border-radius:7px}
+  .phases-cap{font-size:11px;font-weight:700;color:var(--muted);margin:0 4px 4px}
+  .phase-row{display:flex;align-items:center;gap:9px;width:100%;border:none;background:none;padding:5px 4px;cursor:pointer;
+    border-radius:5px;font-family:inherit;font-size:12.5px;color:var(--sub);text-align:left}
+  .phase-row:hover{background:var(--brand-soft)}
+  .phase-row:focus-visible{outline:2px solid var(--brand);outline-offset:1px}
+  .phase-dot{width:7px;height:7px;border-radius:50%;background:#c3ccd6;flex:0 0 auto}
+  .phase-row.ready .phase-dot{background:var(--ok)}
+  .phase-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .phase-st{font-size:10.5px;font-weight:700;color:var(--muted);flex:0 0 auto}
+  .phase-row.ready{color:var(--ink)}
+  .phase-row.ready .phase-st{color:var(--ok)}
+
+  .meter{margin:0 0 12px}
+  .meter-head{display:flex;justify-content:space-between;align-items:baseline;font-size:11.5px;color:var(--muted);margin-bottom:6px;font-weight:600}
+  .meter-head .meter-state{font-variant-numeric:tabular-nums;font-weight:700;color:var(--ink)}
+  .meter-bar{height:8px;border-radius:4px;background:#e7edf4;border:1px solid #dbe3ec;overflow:hidden}
+  .meter-bar span{display:block;height:100%;width:0;border-radius:3px;background:linear-gradient(90deg,var(--brand-deep),var(--brand));transition:width .3s ease}
+  .meter-bar.done span{background:linear-gradient(90deg,#0f6b45,var(--ok))}
+
+  pre{background:var(--console);color:var(--console-ink);border:1px solid #1c2b40;border-radius:8px;padding:14px 16px;overflow:auto;max-height:420px;
+    font-size:11.5px;line-height:1.6;font-family:var(--mono);margin:0}
+  pre::-webkit-scrollbar{width:8px;height:8px}
+  pre::-webkit-scrollbar-thumb{background:#2a3c55;border-radius:4px}
+  pre::-webkit-scrollbar-track{background:transparent}
+  pre .j-k{color:var(--j-key)} pre .j-s{color:var(--j-str)} pre .j-n{color:var(--j-num)} pre .j-b{color:var(--j-bool)}
+
+  /* ---------- 按钮 / 徽标 ---------- */
+  .btn{display:inline-flex;align-items:center;gap:6px;border:none;border-radius:6px;padding:9px 15px;
+    font-size:13px;font-weight:600;cursor:pointer;transition:.15s;font-family:inherit}
+  .btn:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+  .btn.primary{background:var(--brand);color:#fff}
+  .btn.primary:hover{background:var(--brand-deep)}
+  .btn.ghost{background:#eef2f7;color:var(--ink);border:1px solid var(--line)}
+  .btn.ghost:hover{background:#e3e9f0}
+  .btn-row{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
+  .badge{display:inline-block;font-size:11px;padding:2px 8px;border-radius:6px;background:#eef2f7;color:var(--sub);font-weight:600}
+  .badge.ok{background:var(--ok-soft);color:var(--ok)}
+  .badge.warn{background:var(--warn-soft);color:var(--warn)}
+  .badge.err{background:var(--err-soft);color:var(--err)}
+  .kv{font-size:12px;color:var(--sub);margin:2px 0 10px;line-height:1.7}
+  .miss-link{color:var(--err);text-decoration:none;border-bottom:1px dotted currentColor}
+  .miss-link:hover{text-decoration:underline}
+  #validBox.state-warn .miss-link{color:var(--warn)}
+
+  .toast{position:fixed;right:20px;bottom:20px;z-index:50;background:var(--console);color:var(--console-ink);
+    font-size:12.5px;padding:10px 16px;border-radius:8px;box-shadow:0 8px 24px rgba(10,18,30,.35);
+    border:1px solid rgba(255,255,255,.1);opacity:0;transform:translateY(8px);transition:opacity .25s,transform .25s;
+    pointer-events:none;max-width:340px;line-height:1.5}
+  .toast.show{opacity:1;transform:none}
+
+  .hidden{display:none!important}
+
+  @media (prefers-reduced-motion:reduce){
+    *{transition:none!important;animation:none!important}
+    html{scroll-behavior:auto}
+  }
+
+  /* ---------- 嵌入模式（DSH 工作台 iframe） ----------
+     由宿主在 srcDoc 前置注入 window.__DASH_EMBED__=true 开启：
+     隐藏站点级头/尾与「复制触发指令」，显示「启动寻优」按钮
+     （启动动作经桥转交宿主，替换独立态的聊天粘贴闭环），
+     去掉宽度上限、背景透明以融入宿主页面。独立部署时不受影响。 */
+  html[data-dsh-embed] .crumb-bar,
+  html[data-dsh-embed] header,
+  html[data-dsh-embed] footer{display:none}
+  html[data-dsh-embed] body{background:transparent}
+  html[data-dsh-embed] .wrap{max-width:none;padding:0}
+  html[data-dsh-embed] #copyCmdBtn{display:none}
+</style>
+</head>
+<body>
+<div class="crumb-bar">
+  <div class="crumb">
+    <a class="crumb-back" href="workbench.html">← 返回工作台</a>
+    <span class="crumb-sep" aria-hidden="true">/</span>
+    <span class="crumb-current">寻优参数采集台</span>
+  </div>
+</div>
+
+<header>
+  <div class="head">
+    <div class="brand">
+      <h1>寻优参数采集台</h1>
+      <div class="slug">model-oob-perf-optimize</div>
+    </div>
+    <div class="head-state">
+      <span class="chip" id="headMode">智能模式</span>
+      <span class="chip" id="headTopo">单机标准</span>
+      <div class="annun" id="headAnnun" role="status" aria-label="仍有必填项待完善"><i></i><span>待完善</span></div>
+    </div>
+  </div>
+  <p class="head-sub">为昇腾 NPU 推理性能自动寻优采集必要参数，实时生成可直接提交给 model-oob-perf-optimize SKILL 的结构化 JSON。</p>
+</header>
+
+<div class="wrap">
+  <!-- ============ 左：表单区 ============ -->
+  <main>
+    <!-- ① 运行模式 -->
+    <section class="card" id="modeCard">
+      <h2>运行模式 <span class="tag" id="modeBadge">智能模式</span></h2>
+      <p class="desc">采集方式决定确认机制与必填范围：智能模式零确认一键完成，离线模式逐项人工确认。</p>
+      <div class="radio-grid cols2" id="modeGrid">
+        <label class="opt-card sel" data-mode="smart">
+          <input type="radio" name="mode" value="smart" checked>
+          <div><div class="t">智能模式 · 零确认</div>
+            <div class="d">一条消息解析全部字段，所有选择点走默认策略。触发词：一键寻优 / 智能寻优 / 免交互寻优。</div></div>
+        </label>
+        <label class="opt-card" data-mode="offline">
+          <input type="radio" name="mode" value="offline">
+          <div><div class="t">离线推理 · 全人工</div>
+            <div class="d">所有参数由你逐项填写，Agent 不自行决定。触发词：离线参数推理 / 导出寻优配置包。</div></div>
+        </label>
+      </div>
+      <div class="mode-banner" id="modeBanner">本次采集零确认：首条消息一次性解析全部字段，缺失项自动补全并标注 [自动补全]。</div>
+    </section>
+
+    <!-- ② Phase 0 部署拓扑 -->
+    <section class="card" id="topoCard">
+      <h2><span class="tag">Phase 0</span>部署拓扑与环境初始化 <span class="sec-ok" hidden>✓ 就绪</span></h2>
+      <p class="desc">选择部署形态：单机自动采集 NPU 无需额外输入；多机与 PD 分离需补充 SSH、IP 与拓扑信息。</p>
+      <div class="radio-grid cols3" id="topoGrid">
+        <label class="opt-card sel" data-topo="single">
+          <input type="radio" name="topo" value="single" checked>
+          <div><div class="t">单机标准</div><div class="d">自动采集 NPU，无需额外输入</div></div>
+        </label>
+        <label class="opt-card" data-topo="multinode">
+          <input type="radio" name="topo" value="multinode">
+          <div><div class="t">多机</div><div class="d">需 node0 IP / worker SSH</div></div>
+        </label>
+        <label class="opt-card" data-topo="pd">
+          <input type="radio" name="topo" value="pd">
+          <div><div class="t">PD 分离</div><div class="d">需 SSH / 部署规划</div></div>
+        </label>
+      </div>
+
+      <!-- PD 分离字段 -->
+      <div class="attach hidden" id="pdFields">
+        <div class="subhead">PD 分离附加参数</div>
+        <p class="subnote">多节点部署时 SSH 节点必填，其余留空即可由 SKILL 推导。</p>
+        <div class="row">
+          <div class="field"><label for="pd_short">PD 速记部署 <span class="opt">可选</span></label>
+            <input type="text" id="pd_short" placeholder="4*2P(EP16)+1*8D(EP64)">
+            <div class="hint">N*XP(EP_A)+M*YD(EP_B)；留空走手动拓扑或自动推导</div></div>
+          <div class="field"><label for="pd_port">PD 远端端口 <span class="opt">可选</span></label>
+            <input type="text" id="pd_port" placeholder="22">
+            <div class="hint">默认 22</div></div>
+        </div>
+        <div class="field" data-fid="pd_ssh"><label for="pd_ssh">PD SSH 节点 <span class="req">*</span> <span class="opt">多节点部署必填</span></label>
+          <input type="text" id="pd_ssh" placeholder="root@10.0.0.1"></div>
+        <div class="field"><label for="pd_plan">PD 部署规划 <span class="opt">可选</span></label>
+          <textarea id="pd_plan" placeholder='[{"host":"...","p_count":2,"d_count":1}]'></textarea>
+          <div class="hint">逐 host 指定 P/D 节点数</div></div>
+        <div class="row">
+          <div class="field"><label for="pd_connector">PD connector <span class="opt">可选</span></label>
+            <input type="text" id="pd_connector" placeholder="MooncakeConnectorV1">
+            <div class="hint">默认从 TOML 读取</div></div>
+          <div class="field"><label for="pd_kvport">PD kv_port <span class="opt">可选</span></label>
+            <input type="text" id="pd_kvport" placeholder="36000">
+            <div class="hint">留空从 kv_port_base + 芯片数自动计算</div></div>
+        </div>
+        <div class="field"><label for="pd_proxy">PD proxy <span class="opt">可选</span></label>
+          <input type="text" id="pd_proxy" placeholder='{"host":"127.0.0.1","proxy_port":8000}'>
+          <div class="hint">留空自动分配本机</div></div>
+      </div>
+
+      <!-- 多机字段 -->
+      <div class="attach hidden" id="mnFields">
+        <div class="subhead">多机附加参数</div>
+        <p class="subnote">node0 与 worker SSH 必填；拓扑 JSON 智能模式可留空（由 SKILL 自动推导），离线模式必填。</p>
+        <div class="field" data-fid="mn_ip"><label for="mn_ip">node0 通信 IP <span class="req">*</span></label>
+          <input type="text" id="mn_ip" placeholder="10.0.0.1">
+          <div class="hint">主节点与优化器同机、无需 SSH；多网卡时探测到的 IP 未必 worker 可达，请人工确认</div></div>
+        <div class="field" data-fid="mn_ssh"><label for="mn_ssh">worker SSH 信息 <span class="req">*</span> <span class="opt">多节点必填</span></label>
+          <textarea id="mn_ssh" placeholder="每行一个 worker：host / ssh_port / ssh_user / password（免密留空）"></textarea>
+          <div class="hint">仅 worker 需要 SSH；password 用 base64，写入 multihost_ssh_nodes.json</div></div>
+        <div class="field" data-fid="mn_topo"><label for="mn_topo">multihost_topology <span id="mn_topo_req" class="req">*</span></label>
+          <textarea id="mn_topo" placeholder='{"node_count":2,"chips_per_node":16,"rpc_port":13389,"docker_use_sudo":false,"is_moe_model":false,"node":{"host":"10.0.0.1"},"workers":[{"host":"10.0.0.2","ssh_port":22,"ssh_user":"root","password":null,"docker_container_id":null}]}'></textarea>
+          <div class="hint">node=本机无需 SSH；workers ≥1；host 禁 127.0.0.1；nic_name 已废弃勿填；chips_per_node A3=16 / A2=8</div></div>
+      </div>
+    </section>
+
+    <!-- ③ Phase 2 业务建模 -->
+    <section class="card" id="bmCard">
+      <h2><span class="tag">Phase 2</span>业务建模关键参数 <span class="sec-ok" hidden>✓ 就绪</span></h2>
+      <p class="desc">描述压测负载：测试工具、并发数、输入/输出长度与请求形态，作为寻优的负载基准。</p>
+      <div class="row">
+        <div class="field" data-fid="bm_tool"><label for="bm_tool">测试工具 <span class="req">*</span></label>
+          <select id="bm_tool">
+            <option value="">请选择测试工具</option>
+            <option value="evalscope">evalscope</option>
+            <option value="vllm_benchmark">vllm_benchmark</option>
+            <option value="ais_bench">ais_bench</option>
+          </select>
+          <div class="hint">将归一化为标准名，如 evalscope → evalscopeperf</div></div>
+        <div class="field" data-fid="bm_conc"><label for="bm_conc">并发数 <span class="req">*</span></label>
+          <input type="number" id="bm_conc" placeholder="20 / 64 / 256">
+          <div class="hint">映射为 CONCURRENCY</div></div>
+      </div>
+      <div class="row">
+        <div class="field" data-fid="bm_in"><label for="bm_in">输入长度 <span class="req">*</span></label>
+          <div class="input-unit">
+            <input type="text" id="bm_in" placeholder="4096 或 4096~8192，勾选 k 可写 4~8">
+            <label class="unit-chk" title="勾选表示单位为 k（千）"><input type="checkbox" id="bm_in_unit"><span>k</span></label>
+          </div>
+          <div class="hint" id="bm_in_hint">支持固定值或范围，勾选 k 表示单位为千</div></div>
+        <div class="field" data-fid="bm_out"><label for="bm_out">输出长度 <span class="req">*</span></label>
+          <div class="input-unit">
+            <input type="text" id="bm_out" placeholder="1024 或 512~2048，勾选 k 可写 1~2">
+            <label class="unit-chk" title="勾选表示单位为 k（千）"><input type="checkbox" id="bm_out_unit"><span>k</span></label>
+          </div>
+          <div class="hint" id="bm_out_hint">支持固定值或范围，勾选 k 表示单位为千</div></div>
+      </div>
+      <div class="row">
+        <div class="field" data-fid="bm_req"><label for="bm_req">请求数量 <span id="bm_req_req" class="req">必填（智能模式）</span></label>
+          <input type="number" id="bm_req" placeholder="500 / 1600">
+          <div class="hint" id="bm_req_hint">智能模式必填，缺失将自动补全并标注 [自动补全]</div></div>
+        <div class="field"><label for="bm_dataset">测试数据集 <span class="opt">可选</span></label>
+          <select id="bm_dataset">
+            <option value="random">random（默认）</option>
+            <option value="openqa">openqa</option>
+            <option value="longbench">longbench</option>
+            <option value="__custom__">自定义…</option>
+          </select>
+          <input type="text" id="bm_dataset_custom" class="hidden" style="margin-top:8px" placeholder="数据集名称或路径，如 msbench / /data/xxx.jsonl">
+          <div class="hint">默认 random；Prefix 命中率 &gt;0 时仅 random 数据集支持前缀构造</div></div>
+      </div>
+      <div class="row">
+        <div class="field"><label for="bm_tuneparam">测试寻优参数 <span class="opt">可选</span></label>
+          <input type="text" id="bm_tuneparam" placeholder="无 或 --parallel 20=$[10~30]">
+          <div class="hint">格式：--参数 默认值=$[min~max]（连续）/ $[min~max+step]（步长）/ $[v1,v2,…]（枚举）；留空由 SKILL 推导；ais_bench 仅支持 CONCURRENCY/REQUESTRATE，其余自定义无效</div></div>
+        <div class="field" data-fid="bm_prefix"><label for="bm_prefix">Prefix cache 命中率 <span class="opt">可选</span></label>
+          <select id="bm_prefix">
+            <option value="">留空（不指定）</option>
+            <option value="0.5">0.5（50%）</option>
+            <option value="0.9">0.9（90%）</option>
+            <option value="1.0">1.0（全命中）</option>
+            <option value="__custom__">自定义…</option>
+          </select>
+          <input type="text" id="bm_prefix_custom" class="hidden" style="margin-top:8px" placeholder="0~1 小数或百分数，如 0.7 / 70%">
+          <div class="hint">该值作为固定常量使用，不会参与寻优；影响测试集构造与 KV 预算推导。自定义支持小数或百分数</div></div>
+      </div>
+      <div class="section-note hidden" id="aisWarn">⚠ ais_bench 的 input_len / output_len 不支持寻优：若指定范围，SKILL 将提示并降为固定值。</div>
+    </section>
+
+    <!-- ④ Phase 3 寻优需求 -->
+    <section class="card" id="reqCard">
+      <h2><span class="tag">Phase 3</span>寻优需求 <span class="sec-ok" hidden>✓ 就绪</span></h2>
+      <p class="desc">指定模型权重路径与寻优目标，可附加启动脚本、寻优变量与环境变量。</p>
+      <div class="row">
+        <div class="field" data-fid="or_weight"><label for="or_weight">模型权重路径 <span class="req">*</span></label>
+          <input type="text" id="or_weight" placeholder="/mnt/weight/llama-7b"></div>
+        <div class="field"><label for="or_hw">硬件要求 <span class="opt">可选</span></label>
+          <select id="or_hw">
+            <option value="">留空（使用 Phase 0 检测值）</option>
+            <option value="单机 4张A2卡">单机 4张A2卡</option>
+            <option value="单机 8张A3卡">单机 8张A3卡</option>
+            <option value="2节点×8张A3卡">2节点×8张A3卡（多机/PD）</option>
+            <option value="__custom__">自定义…</option>
+          </select>
+          <input type="text" id="or_hw_custom" class="hidden" style="margin-top:8px" placeholder="如 4节点×8张A3卡">
+          <div class="hint">PD/多机必须含节点数，禁止裸集群总量</div></div>
+      </div>
+      <div class="field" data-fid="or_goal"><label for="or_goal">寻优目标 <span class="req">*</span></label>
+        <select id="or_goal">
+          <option value="吞吐优先">吞吐优先（默认）</option>
+          <option value="TTFT &lt; 100ms 下最大吞吐">TTFT &lt; 100ms 下最大吞吐</option>
+          <option value="TPOT &lt; 100ms 下最大吞吐">TPOT &lt; 100ms 下最大吞吐</option>
+          <option value="__custom__">自定义…</option>
+        </select>
+        <input type="text" id="or_goal_custom" class="hidden" style="margin-top:8px" placeholder="如 TTFT &lt; 200ms 下最大吞吐 / TPOT &lt; 50ms 且 TTFT &lt; 150ms 下最大吞吐">
+        <div class="hint">阈值可自定义：吞吐优先 / TTFT &lt; Xms 下最大吞吐 / TPOT &lt; Xms 且 TTFT &lt; Yms 下最大吞吐</div></div>
+      <div class="row">
+        <div class="field"><label for="or_serve">服务启动脚本 <span class="opt">可选</span></label>
+          <input type="text" id="or_serve" placeholder="vllm serve ... 或脚本路径"></div>
+        <div class="field"><label for="or_test">测试启动脚本 <span class="opt">可选</span></label>
+          <input type="text" id="or_test" placeholder="evalscope perf ... / vllm bench serve ..."></div>
+      </div>
+      <div class="field"><label for="or_var">服务寻优变量 <span class="opt">可选</span></label>
+        <input type="text" id="or_var" placeholder="--max-num-seqs 32=$[16~64+16]">
+        <div class="hint">格式：--参数 默认值=$[min~max]（连续）/ $[min~max+step]（步长）/ $[v1,v2,…]（枚举）；留空由 SKILL 推导</div></div>
+      <div class="field"><label for="or_env">环境变量寻优变量 <span class="opt">可选</span></label>
+        <input type="text" id="or_env" placeholder="HCCL_BUFFSIZE 512=$[256~1024]（留空则不寻优）">
+        <div class="hint">格式：&lt;变量名&gt; &lt;默认值&gt;=$[min~max]（连续）或 $[v1,v2,...]（枚举）；留空则环境变量保持脚本固定值，不参与寻优</div></div>
+    </section>
+
+    <!-- ⑤ 离线推理：硬件 / 版本 -->
+    <section class="card hidden" id="offlineCard">
+      <h2><span class="tag">OFFLINE</span>离线推理 · 全字段人工输入 <span class="sec-ok" hidden>✓ 就绪</span></h2>
+      <p class="desc">所有参数必须由你填写，Agent 不自行决定（除非显式要求自动检测）。</p>
+
+      <div class="subhead">硬件信息（全部必填）</div>
+      <div class="row">
+        <div class="field" data-fid="of_npu"><label for="of_npu"><span class="key">npu_type</span> <span class="kg">芯片型号</span> <span class="req">*</span></label>
+          <input type="text" id="of_npu" placeholder="A3"></div>
+        <div class="field" data-fid="of_card"><label for="of_card"><span class="key">card_count</span> <span class="kg">单机卡数</span> <span class="req">*</span></label>
+          <input type="number" id="of_card" placeholder="2"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label for="of_chip"><span class="key">chip_count</span> <span class="kg">芯片总数</span> <span class="opt">可选</span></label>
+          <select id="of_chip">
+            <option value="">留空（按型号推断）</option>
+            <option value="card_count">同 card_count（A2）</option>
+            <option value="card_count_x2">card_count×2（A3/A5）</option>
+            <option value="__custom__">自定义数值…</option>
+          </select>
+          <input type="number" id="of_chip_custom" class="hidden" style="margin-top:8px" placeholder="芯片总数">
+          <div class="hint">留空按型号推断：A2=卡数，A3/A5=卡数×2</div></div>
+        <div class="field"><label for="of_soc"><span class="key">soc_version</span> <span class="kg">昇腾 SoC 版本</span> <span class="opt">可选</span></label>
+          <select id="of_soc">
+            <option value="">留空（按型号推断）</option>
+            <option value="ascend910b1">ascend910b1（A2）</option>
+            <option value="ascend910_9391">ascend910_9391（A3）</option>
+            <option value="__custom__">自定义…</option>
+          </select>
+          <input type="text" id="of_soc_custom" class="hidden" style="margin-top:8px" placeholder="如 ascend950_9571（A5 需自定义完整版本号）"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label for="of_hbm"><span class="key">hbm_size_gb</span> <span class="kg">每芯片显存（GB）</span> <span class="opt">可选 · 默认 64</span></label>
+          <select id="of_hbm">
+            <option value="">留空（默认 64）</option>
+            <option value="64">64</option>
+            <option value="128">128</option>
+            <option value="144">144（A5）</option>
+            <option value="__custom__">自定义…</option>
+          </select>
+          <input type="number" id="of_hbm_custom" class="hidden" style="margin-top:8px" placeholder="每 chip 显存 GB"></div>
+        <div class="field"><label for="of_ip"><span class="key">local_ip</span> <span class="kg">本机通信 IP</span> <span class="opt">多机/PD 需真实 IP</span></label>
+          <input type="text" id="of_ip" placeholder="10.0.0.1"></div>
+      </div>
+
+      <div class="subhead">软件版本（全部必填）</div>
+      <div class="row">
+        <div class="field" data-fid="of_vllm"><label for="of_vllm"><span class="key">vllm_version</span> <span class="kg">vLLM</span> <span class="req">*</span></label>
+          <input type="text" id="of_vllm" placeholder="0.22.1"></div>
+        <div class="field" data-fid="of_vllma"><label for="of_vllma"><span class="key">vllm_ascend_version</span> <span class="kg">vLLM-Ascend</span> <span class="req">*</span></label>
+          <input type="text" id="of_vllma" placeholder="0.22.1rc1"></div>
+      </div>
+      <div class="row">
+        <div class="field" data-fid="of_cann"><label for="of_cann"><span class="key">cann_version</span> <span class="kg">CANN</span> <span class="req">*</span> <span class="opt">仅数字</span></label>
+          <input type="text" id="of_cann" placeholder="9.0.0"></div>
+        <div class="field"><label for="of_torch"><span class="key">torch_version</span> <span class="kg">PyTorch</span> <span class="opt">可选</span></label>
+          <input type="text" id="of_torch" placeholder="2.10.0"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label for="of_torchnpu"><span class="key">torch_npu_version</span> <span class="kg">torch_npu</span> <span class="opt">可选</span></label>
+          <input type="text" id="of_torchnpu" placeholder="2.10.0"></div>
+        <div class="field"><label for="of_tf"><span class="key">transformers_version</span> <span class="kg">Transformers</span> <span class="opt">可选</span></label>
+          <input type="text" id="of_tf" placeholder="4.57.1"></div>
+      </div>
+
+      <div class="subhead">平台微架构参数（可选，缺省用内建默认值）</div>
+      <div class="field"><label for="of_platform">platform_* 微架构 9 项</label>
+        <textarea id="of_platform" placeholder="platform_l2_size_mb
+platform_cube_freq_mhz
+platform_ub_size_kb
+platform_ddr_rate_gbs
+platform_ai_core_cnt
+platform_hbm_size_gb
+platform_int8_k_size
+platform_soc_version
+platform_aic_version"></textarea></div>
+
+      <div class="subhead">模型配置（强制）</div>
+      <div class="field" data-fid="of_config"><label for="of_config">模型 config.json 路径 / 链接 <span class="req">*</span></label>
+        <input type="text" id="of_config" placeholder="HuggingFace / ModelScope 链接或本地路径">
+        <div class="hint">无法提供将阻断流程</div></div>
+    </section>
+  </main>
+
+  <!-- ============ 右：输出区 ============ -->
+  <aside class="out">
+    <section class="card">
+      <h2>参数输出 <button class="collapse-btn" id="toggleJson">收起 JSON</button></h2>
+      <p class="desc">随表单实时更新，就绪后复制提交给 SKILL。</p>
+      <div class="cmdbar"><span class="cmd-label">触发指令</span><code class="cmd-val" id="cmdVal">一键寻优（单机）</code></div>
+      <div class="phases">
+        <p class="phases-cap">阶段就绪</p>
+        <div id="phaseList"></div>
+      </div>
+      <div class="meter">
+        <div class="meter-head"><span>必填完成度</span><span class="meter-state" id="meterState">0 / 0</span></div>
+        <div class="meter-bar" id="meterBar"><span id="meterFill"></span></div>
+      </div>
+      <div id="validBox" class="kv" aria-live="polite"></div>
+      <pre id="jsonOut"></pre>
+      <div class="btn-row">
+        <button class="btn primary hidden" id="launchBtn" disabled>启动寻优</button>
+        <button class="btn primary" id="copyCmdBtn" data-orig="复制触发指令">复制触发指令</button>
+        <button class="btn ghost" id="downloadBtn">下载 JSON</button>
+        <button class="btn ghost" id="resetBtn">重置表单</button>
+      </div>
+    </section>
+  </aside>
+</div>
+
+<footer>参数采集与结构化输出工具 · 输出的 JSON 可直接提交给 model-oob-perf-optimize SKILL</footer>
+
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const val = id => { const el = $(id); return el ? (el.value || "").trim() : ""; };
+
+// ── 嵌入模式桥（DSH 工作台 iframe） ──
+// 宿主以 iframe(srcDoc) 引入本页时，会在文档最前注入
+// window.__DASH_EMBED__ = true。嵌入态通过 postMessage 向宿主同步
+// 最新 JSON / 就绪态 / 内容高度；独立部署时 IS_EMBED=false，这些全为 no-op。
+const IS_EMBED = window.__DASH_EMBED__ === true;
+if(IS_EMBED) document.documentElement.setAttribute('data-dsh-embed', '');
+function postBridge(kind, extra){
+  if(!IS_EMBED) return;
+  try{
+    const msg = Object.assign({ bridge:'dsh-wb:artifact', kind, cardId:'model-oob-perf-optimize' }, extra || {});
+    (window.parent || window).postMessage(msg, '*');
+  }catch(e){}
+}
+// 当前未满足的必填项（render() 复用同一口径，保持单一真相）
+function missingRequired(){
+  return requiredList().filter(f => (f.id === 'or_goal' ? !goalFilled() : !val(f.id)));
+}
+
+// 输入长度 / 输出长度：支持「数值 + 单位 k（勾选）」。提交值原样带上单位，不做 ×1000 换算
+function lenSides(id){
+  const t = val(id); if(!t) return null;
+  return t.split('~').map(x => x.trim());
+}
+function lenNorm(id){                 // 提交值：各端 数字 + (勾选 k 或已带 k ? 'k' : '')，原样输出
+  const sides = lenSides(id); if(!sides) return '';
+  const box = $(id + '_unit');
+  const checked = !!(box && box.checked);
+  if(sides.some(x => !/^\d+(?:\.\d+)?k?$/i.test(x))) return val(id);   // 非法时原样返回，交由格式校验提示
+  return sides.map(x => {
+    const m = /^(\d+(?:\.\d+)?)(k?)$/i.exec(x);
+    return m[1] + ((m[2] || checked) ? 'k' : '');
+  }).join('~');
+}
+
+const MODE_META = {
+  smart:  { label:'智能模式', trigger:'一键寻优',
+    banner:'本次采集零确认：首条消息一次性解析全部字段，缺失项自动补全并标注 [自动补全]。' },
+  offline:{ label:'离线推理', trigger:'离线参数推理',
+    banner:'本次采集全人工：所有参数由你逐项填写，Agent 不自动推导任何字段。' }
+};
+
+const STORAGE_KEY = 'model-oob-perf-optimize.draft.v1';
+
+function curMode(){ const r=document.querySelector('input[name=mode]:checked'); return r ? r.value : 'smart'; }
+function curTopo(){ const r=document.querySelector('input[name=topo]:checked'); return r ? r.value : 'single'; }
+// 寻优目标：自定义选项选中但未填内容 → 视为缺失
+function goalFilled(){ return val('or_goal') !== '__custom__' || !!val('or_goal_custom'); }
+// 通用「下拉 + 自定义」取值：自定义选中且填写 → 用自定义值；否则用下拉值
+function selOrCustom(id){ return val(id) === '__custom__' ? val(id + '_custom') : val(id); }
+// chip_count：A2=card_count，A3/A5=card_count×2（按 of_card 实时换算），留空则空（由 SKILL 推断）
+function chipVal(){
+  const c = selOrCustom('of_chip');
+  const n = Number(val('of_card')) || 0;
+  if(c === 'card_count')    return n ? String(n) : '';
+  if(c === 'card_count_x2') return n ? String(n * 2) : '';
+  return c;
+}
+
+// ---------- 模式 / 拓扑 联动 ----------
+function applyMode(){
+  const mode = curMode(), meta = MODE_META[mode];
+  $('modeBadge').textContent = meta.label;
+  $('modeBanner').textContent = meta.banner;
+
+  const req = (mode === 'smart'), rq = $('bm_req_req');
+  rq.textContent = req ? '必填（智能模式）' : '可选（离线自动推算）';
+  rq.className = req ? 'req' : 'opt';
+  $('bm_req_hint').textContent = req
+    ? '智能模式必填；缺失将自动补全并标注 [自动补全]'
+    : '留空自动推算：max(min(并发×5, 1000), 并发×2)';
+
+  // multihost_topology：智能模式由 SKILL 自动推导（可选），离线模式全人工（必填）
+  const mt = $('mn_topo_req');
+  if(mt){
+    mt.textContent = (mode === 'offline') ? '*' : '可选（智能自动推导）';
+    mt.className = (mode === 'offline') ? 'req' : 'opt';
+  }
+
+  $('offlineCard').classList.toggle('hidden', mode !== 'offline');
+  render();
+}
+function applyTopo(){
+  const topo = curTopo();
+  $('pdFields').classList.toggle('hidden', topo !== 'pd');
+  $('mnFields').classList.toggle('hidden', topo !== 'multinode');
+  render();
+}
+
+// ---------- 选择卡片高亮（含键盘方向键切换） ----------
+function bindGrid(sel, applyFn){
+  document.querySelectorAll(sel).forEach(c=>{
+    c.addEventListener('click', ()=>{
+      c.querySelector('input').checked = true;
+      document.querySelectorAll(sel).forEach(x=>x.classList.remove('sel'));
+      c.classList.add('sel');
+      applyFn();
+    });
+  });
+  document.querySelectorAll(sel + ' input').forEach(r=>{
+    r.addEventListener('change', ()=>{
+      document.querySelectorAll(sel).forEach(x=>x.classList.toggle('sel', x.querySelector('input').value === r.value));
+      applyFn();
+    });
+  });
+}
+bindGrid('#modeGrid .opt-card', applyMode);
+bindGrid('#topoGrid .opt-card', applyTopo);
+
+// 输入监听：所有联动统一在 render() 中刷新
+document.querySelectorAll('input,select,textarea').forEach(el=>{
+  ['input','change'].forEach(ev=>el.addEventListener(ev, ()=>{ render(); }));
+});
+
+// ---------- 必填项与格式校验 ----------
+function requiredList(){
+  const mode = curMode(), topo = curTopo(), req = [];
+  req.push({id:'bm_tool', label:'测试工具'});
+  req.push({id:'bm_conc', label:'并发数'});
+  req.push({id:'bm_in',   label:'输入长度'});
+  req.push({id:'bm_out',  label:'输出长度'});
+  if(mode === 'smart') req.push({id:'bm_req', label:'请求数量'});
+  req.push({id:'or_weight', label:'模型权重路径'});
+  if(!goalFilled()) req.push({id:'or_goal', label:'寻优目标'});
+  if(topo === 'pd') req.push({id:'pd_ssh', label:'PD SSH 节点'});
+  if(topo === 'multinode'){
+    req.push({id:'mn_ip',  label:'node0 通信 IP'});
+    req.push({id:'mn_ssh', label:'worker SSH 信息'});
+    if(mode === 'offline') req.push({id:'mn_topo', label:'multihost_topology'});
+  }
+  if(mode === 'offline'){
+    [['of_npu','npu_type'],['of_card','card_count'],['of_vllm','vllm_version'],
+     ['of_vllma','vllm_ascend_version'],['of_cann','cann_version'],['of_config','模型 config.json']]
+      .forEach(p=>req.push({id:p[0], label:p[1]}));
+  }
+  return req;
+}
+
+function syntaxWarns(){
+  const warns = [];
+  if(val('bm_conc') && !/^\d+$/.test(val('bm_conc'))) warns.push({id:'bm_conc', msg:'并发数应为正整数，如 64'});
+  const lenRe = /^\d+(?:\.\d+)?k?(?:\s*~\s*\d+(?:\.\d+)?k?)?$/i;
+  if(val('bm_in')  && !lenRe.test(val('bm_in')))  warns.push({id:'bm_in',  msg:'输入长度支持固定值（4096）或范围（4096~8192），也可勾选 k（4k~8k）'});
+  if(val('bm_out') && !lenRe.test(val('bm_out'))) warns.push({id:'bm_out', msg:'输出长度支持固定值（1024）或范围（512~2048），也可勾选 k'});
+  const pf = selOrCustom('bm_prefix');
+  if(pf && pf !== 'constant'){
+    const m = /^(\d+(\.\d+)?)%?$/.exec(pf);
+    const v = m ? (pf.endsWith('%') ? parseFloat(m[1])/100 : parseFloat(m[1])) : NaN;
+    if(!m || v < 0 || v > 1) warns.push({id:'bm_prefix', msg:'Prefix cache 命中率应为 0~1 小数或百分比，如 0.9 / 90%'});
+  }
+  const topoJson = val('mn_topo');
+  if(topoJson){
+    let jsonOk = true;
+    try{ JSON.parse(topoJson); }catch(e){ jsonOk = false; }
+    const msgs = [];
+    if(!jsonOk) msgs.push('应为合法 JSON（检查引号与逗号）');
+    if(/127\.0\.0\.1|localhost/.test(topoJson)) msgs.push('host 禁止 127.0.0.1 / localhost，需本机可达的物理 IP');
+    if(msgs.length) warns.push({id:'mn_topo', msg:'multihost_topology ' + msgs.join('；')});
+  }
+  return warns;
+}
+
+// ---------- 输出 ----------
+function buildJSON(){
+  const mode = curMode(), topo = curTopo();
+  const out = {
+    mode: MODE_META[mode].label,
+    mode_trigger: MODE_META[mode].trigger,
+    topology: {single:'单机标准', pd:'PD分离', multinode:'多机'}[topo],
+    phase0: {},
+    business_modeling: {
+      tool: val('bm_tool'),
+      concurrency: val('bm_conc'),
+      input_len: lenNorm('bm_in'),
+      output_len: lenNorm('bm_out'),
+      request_num: val('bm_req'),
+      dataset: (val('bm_dataset') === '__custom__' ? val('bm_dataset_custom') : val('bm_dataset')) || 'random',
+      test_tune_param: val('bm_tuneparam'),
+      prefix_cache_hitrate: selOrCustom('bm_prefix')
+    },
+    optimization_requirement: {
+      gen_mode: 'AI自动生成（甩手）',
+      weight_path: val('or_weight'),
+      hardware_req: selOrCustom('or_hw'),
+      goal: (val('or_goal') === '__custom__' ? val('or_goal_custom') : val('or_goal')),
+      serve_script: val('or_serve'),
+      test_script: val('or_test'),
+      tune_var: val('or_var'),
+      env_tune_var: val('or_env')
+    }
+  };
+  if(topo === 'pd'){
+    out.phase0.pd = {
+      short_deploy: val('pd_short'),
+      ssh_node: val('pd_ssh'),
+      remote_port: val('pd_port') || '22',
+      deploy_plan: val('pd_plan'),
+      connector: val('pd_connector'),
+      proxy: val('pd_proxy'),
+      kv_port: val('pd_kvport')
+    };
+  }
+  if(topo === 'multinode'){
+    out.phase0.multinode = {
+      node0_ip: val('mn_ip'),
+      worker_ssh: val('mn_ssh'),
+      multihost_topology: val('mn_topo')
+    };
+  }
+  if(mode === 'offline'){
+    out.offline = {
+      hardware: {
+        npu_type: val('of_npu'), card_count: val('of_card'), chip_count: chipVal(),
+        soc_version: selOrCustom('of_soc'), hbm_size_gb: selOrCustom('of_hbm') || '64', local_ip: val('of_ip')
+      },
+      software: {
+        vllm_version: val('of_vllm'), vllm_ascend_version: val('of_vllma'), cann_version: val('of_cann'),
+        torch_version: val('of_torch'), torch_npu_version: val('of_torchnpu'), transformers_version: val('of_tf')
+      },
+      platform_microarch: val('of_platform'),
+      model_config: val('of_config')
+    };
+  }
+  return out;
+}
+
+// 轻量 JSON 语法着色
+function hl(json){
+  let e = json.replace(/[<>&]/g, m=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[m]));
+  e = e.replace(/(\s)("(?:[^"\\]|\\.)*")(\s*:)/g, '$1<span class="j-k">$2</span>$3');
+  e = e.replace(/: ("(?:[^"\\]|\\.)*")/g, ': <span class="j-s">$1</span>');
+  e = e.replace(/: (-?\d+(?:\.\d+)?)/g, ': <span class="j-n">$1</span>');
+  e = e.replace(/: (true|false|null)/g, ': <span class="j-b">$1</span>');
+  return e;
+}
+
+let lastJSON = '';
+
+function missLinks(items){
+  return items.map(it => '<a class="miss-link" href="#" data-jump="' + it.id + '">' + it.label + '</a>').join('、');
+}
+function setSec(cardId, ids){
+  const el = $(cardId).querySelector('.sec-ok');
+  if(!el) return;
+  // 无必填项（如单机部署的 Phase 0）视为就绪
+  el.hidden = !(ids.length === 0 || ids.every(id => val(id)));
+}
+function clearWarns(){
+  document.querySelectorAll('.field.warn').forEach(f=>{
+    f.classList.remove('warn');
+    const m = f.querySelector('.warn-msg'); if(m) m.remove();
+  });
+}
+
+function render(){
+  const mode = curMode(), topo = curTopo();
+  const req = requiredList(), missing = missingRequired(), warns = syntaxWarns();
+  const total = req.length, done = total - missing.length;
+
+  const built = buildJSON();
+  lastJSON = JSON.stringify(built, null, 2);
+  $('jsonOut').innerHTML = hl(lastJSON);
+
+  const fill = $('meterFill'), bar = $('meterBar');
+  const pct = total ? Math.round(done/total*100) : 0;
+  fill.style.width = pct + '%';
+  bar.classList.toggle('done', missing.length === 0);
+  $('meterState').textContent = done + ' / ' + total + ' · ' + pct + '%';
+
+  // 嵌入态「启动寻优」按钮：与必填完成度同口径门禁（独立态恒隐藏，不影响）
+  const lb = $('launchBtn'); if(lb) lb.disabled = missing.length > 0;
+
+  const box = $('validBox');
+  if(missing.length){
+    box.className = 'kv state-err';
+    box.innerHTML = '<span class="badge err">还差 ' + missing.length + ' 项必填</span> ' + missLinks(missing);
+  }else if(warns.length){
+    box.className = 'kv state-warn';
+    box.innerHTML = '<span class="badge warn">必填齐全，' + warns.length + ' 条格式提示</span> ' + missLinks(warns);
+  }else{
+    box.className = 'kv state-ok';
+    box.innerHTML = '<span class="badge ok">✓ 必填齐全</span> 可直接复制输出并提交给 SKILL。';
+  }
+
+  setSec('topoCard', topo === 'pd' ? ['pd_ssh'] : topo === 'multinode'
+    ? (mode === 'offline' ? ['mn_ip','mn_ssh','mn_topo'] : ['mn_ip','mn_ssh']) : []);
+  const bm = ['bm_tool','bm_conc','bm_in','bm_out']; if(mode === 'smart') bm.push('bm_req');
+  setSec('bmCard', bm);
+  const reqSec = $('reqCard').querySelector('.sec-ok');
+  if(reqSec) reqSec.hidden = !(val('or_weight') && goalFilled());
+  setSec('offlineCard', ['of_npu','of_card','of_vllm','of_vllma','of_cann','of_config']);
+
+  syncCustomFields();
+  syncSel();
+  clearWarns();
+  warns.forEach(w=>{
+    const f = document.querySelector('.field[data-fid="' + w.id + '"]');
+    if(!f) return;
+    f.classList.add('warn');
+    let m = f.querySelector('.warn-msg');
+    if(!m){ m = document.createElement('div'); m.className = 'warn-msg'; f.appendChild(m); }
+    m.textContent = '⚠ ' + w.msg;
+  });
+
+  renderHeader(missing.length === 0);
+  renderPhases();
+  renderCmd();
+  saveDraft();
+  if(IS_EMBED) postBridge('state', { json: built, ready: missing.length === 0, warns });
+}
+
+// ---------- 联动：自定义下拉可见性 / ais 提示 / 单位勾选描边 ----------
+function syncCustomFields(){
+  const map = {'bm_dataset':'bm_dataset_custom','or_goal':'or_goal_custom',
+    'bm_prefix':'bm_prefix_custom','or_hw':'or_hw_custom',
+    'of_hbm':'of_hbm_custom','of_chip':'of_chip_custom','of_soc':'of_soc_custom'};
+  const ais = $('aisWarn');
+  if(ais) ais.classList.toggle('hidden', val('bm_tool') !== 'ais_bench');
+  for(const sid in map){
+    const el = $(sid), tgt = $(map[sid]);
+    if(el && tgt) tgt.classList.toggle('hidden', el.value !== '__custom__');
+  }
+  ['bm_in','bm_out'].forEach(id=>{
+    const box = $(id + '_unit'), chk = box && box.closest('.unit-chk');
+    if(chk) chk.classList.toggle('on', !!(box && box.checked));
+    const h = $(id + '_hint'); if(!h) return;
+    const nm = lenNorm(id);
+    h.textContent = nm ? ('支持固定值或范围 · 提交值 ' + nm) : '支持固定值或范围，勾选 k 表示单位为千';
+  });
+}
+
+function syncSel(){
+  document.querySelectorAll('.radio-grid .opt-card').forEach(c=>{
+    const inp = c.querySelector('input');
+    c.classList.toggle('sel', !!(inp && inp.checked));
+  });
+}
+
+// ---------- 头部状态 / 阶段就绪 / 触发指令预览 ----------
+function topoLabel(){ return {single:'单机标准', pd:'PD 分离', multinode:'多机'}[curTopo()]; }
+function triggerText(){ return MODE_META[curMode()].trigger + '（' + ({single:'单机', pd:'PD分离', multinode:'多机'}[curTopo()]) + '）'; }
+
+function renderHeader(ready){
+  const me = $('headMode'), te = $('headTopo');
+  if(me) me.textContent = MODE_META[curMode()].label;
+  if(te) te.textContent = topoLabel();
+  const ann = $('headAnnun');
+  if(ann){
+    const tx = ann.querySelector('span');
+    ann.classList.toggle('go', ready);
+    ann.setAttribute('aria-label', ready ? '必填项齐全，可提交' : '仍有必填项待完善');
+    if(tx) tx.textContent = ready ? '就绪' : '待完善';
+  }
+}
+
+function phaseState(){
+  const mode = curMode(), topo = curTopo();
+  const p0 = {card:'topoCard', label:'阶段 0 · 部署拓扑', ready: topo === 'pd'
+    ? !!val('pd_ssh')
+    : topo === 'multinode'
+      ? (!!val('mn_ip') && !!val('mn_ssh') && (mode !== 'offline' || !!val('mn_topo')))
+      : true};
+  const bmIds = ['bm_tool','bm_conc','bm_in','bm_out']; if(mode === 'smart') bmIds.push('bm_req');
+  const p2 = {card:'bmCard', label:'阶段 2 · 业务建模', ready: bmIds.every(id => val(id))};
+  const p3 = {card:'reqCard', label:'阶段 3 · 寻优需求', ready: !!val('or_weight') && goalFilled()};
+  const list = [p0, p2, p3];
+  if(mode === 'offline') list.push({card:'offlineCard', label:'离线 · 硬件与版本',
+    ready: ['of_npu','of_card','of_vllm','of_vllma','of_cann','of_config'].every(id => val(id))});
+  return list;
+}
+
+function renderPhases(){
+  const wrap = $('phaseList'); if(!wrap) return;
+  wrap.innerHTML = phaseState().map(p =>
+    '<button type="button" class="phase-row' + (p.ready ? ' ready' : '') + '" data-target="' + p.card + '">' +
+      '<i class="phase-dot"></i><span class="phase-name">' + p.label + '</span>' +
+      '<span class="phase-st">' + (p.ready ? '就绪' : '待完善') + '</span>' +
+    '</button>').join('');
+}
+$('phaseList').addEventListener('click', e=>{
+  const b = e.target.closest('.phase-row'); if(!b) return;
+  const el = $(b.dataset.target); if(!el) return;
+  el.scrollIntoView({block:'start'});
+  el.classList.add('flash');
+  setTimeout(()=>el.classList.remove('flash'), 1600);
+});
+
+function renderCmd(){
+  const el = $('cmdVal'); if(!el) return;
+  el.textContent = triggerText();
+}
+
+// ---------- 草稿持久化（localStorage） ----------
+let suppressDraftSave = false;
+function saveDraft(){
+  if(suppressDraftSave) return;
+  try{
+    const d = {};
+    document.querySelectorAll('input,select,textarea').forEach(el=>{
+      if(!el.id) return;
+      d[el.id] = (el.type === 'checkbox') ? el.checked : el.value;
+    });
+    document.querySelectorAll('input[type=radio]').forEach(r=>{ if(r.checked) d['radio:' + r.name] = r.value; });
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(d));
+  }catch(e){}
+}
+function restoreDraft(){
+  try{
+    const d = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+    // 仅 radio 状态 / 全空字段 → 视为无草稿，不提示并清理
+    const hasContent = Object.keys(d).some(k => {
+      if(k.indexOf('radio:') === 0) return false;
+      const v = d[k];
+      if(typeof v === 'boolean') return v;
+      return typeof v === 'string' && v.trim() !== '';
+    });
+    if(!hasContent){
+      try{ localStorage.removeItem(STORAGE_KEY); }catch(e){}
+      return;
+    }
+    for(const k in d){
+      if(k.indexOf('radio:') === 0){
+        const r = document.querySelector('input[name="' + k.slice(6) + '"][value="' + d[k] + '"]');
+        if(r) r.checked = true;
+      }else{
+        const el = $(k); if(!el) continue;
+        if(el.type === 'checkbox') el.checked = !!d[k];
+        else el.value = d[k];
+      }
+    }
+    showToast('已恢复上次未提交的草稿，可点「重置表单」清空');
+  }catch(e){}
+}
+function showToast(msg){
+  let t = $('toast');
+  if(!t){
+    t = document.createElement('div');
+    t.id = 'toast'; t.className = 'toast'; t.setAttribute('role', 'status');
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._t);
+  t._t = setTimeout(()=>t.classList.remove('show'), 3200);
+}
+
+// 缺失项 / 提示项点击跳转
+$('validBox').addEventListener('click', e=>{
+  const a = e.target.closest('a.miss-link'); if(!a) return;
+  e.preventDefault();
+  const el = $(a.dataset.jump); if(!el) return;
+  el.scrollIntoView({block:'center'});
+  const f = el.closest('.field'); if(!f) return;
+  f.classList.add('flash');
+  setTimeout(()=>f.classList.remove('flash'), 1600);
+});
+
+// ---------- 按钮 ----------
+function copyText(t, done){
+  if(navigator.clipboard && window.isSecureContext){
+    navigator.clipboard.writeText(t).then(done, ()=>legacyCopy(t, done));
+  }else legacyCopy(t, done);
+}
+function legacyCopy(t, done){
+  const ta = document.createElement('textarea');
+  ta.value = t;
+  ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0';
+  document.body.appendChild(ta); ta.select();
+  try{ document.execCommand('copy'); }catch(e){}
+  ta.remove(); done();
+}
+function okBtn(btn){
+  btn.textContent = '已复制 ✓';
+  clearTimeout(btn._t);
+  btn._t = setTimeout(()=>btn.textContent = btn.dataset.orig || '已复制', 1500);
+}
+
+// 嵌入态「启动寻优」：把启动动作转交宿主（宿主经桥收到 launch 后调用 launchCardSession）
+$('launchBtn').addEventListener('click', ()=>postBridge('launch'));
+$('copyCmdBtn').addEventListener('click', ()=>{
+  const cmd = MODE_META[curMode()].trigger + '（' + ({single:'单机', pd:'PD分离', multinode:'多机'}[curTopo()]) + '）\n\n' + lastJSON;
+  copyText(cmd, ()=>okBtn($('copyCmdBtn')));
+});
+$('downloadBtn').addEventListener('click', ()=>{
+  const blob = new Blob([lastJSON], {type:'application/json'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'model-oob-perf-optimize-input.json'; a.click();
+});
+$('resetBtn').addEventListener('click', ()=>{
+  document.querySelectorAll('input[type=text],input[type=number],textarea').forEach(el=>el.value = '');
+  document.querySelectorAll('select').forEach(el=>el.selectedIndex = 0);
+  document.querySelectorAll('input[type=checkbox]').forEach(el=>el.checked = false);
+  document.querySelectorAll('input[type=radio]').forEach(el=>el.checked = false);
+  document.querySelector('#modeGrid input[value=smart]').checked = true;
+  document.querySelector('#topoGrid input[value=single]').checked = true;
+  document.querySelectorAll('.opt-card').forEach(c=>c.classList.remove('sel'));
+  document.querySelector('#modeGrid .opt-card[data-mode=smart]').classList.add('sel');
+  document.querySelector('#topoGrid .opt-card[data-topo=single]').classList.add('sel');
+  $('aisWarn').classList.add('hidden');
+  document.querySelectorAll('[id$="_custom"]').forEach(el=>el.classList.add('hidden'));
+  try{ localStorage.removeItem(STORAGE_KEY); }catch(e){}
+  suppressDraftSave = true;
+  applyMode(); applyTopo();
+  suppressDraftSave = false;
+  try{ localStorage.removeItem(STORAGE_KEY); }catch(e){}
+});
+$('toggleJson').addEventListener('click', ()=>{
+  const pre = $('jsonOut'), hidden = pre.classList.toggle('hidden');
+  $('toggleJson').textContent = hidden ? '展开 JSON' : '收起 JSON';
+});
+
+// ---------- 初始化 ----------
+restoreDraft();
+applyMode(); applyTopo();
+
+// 嵌入态：向宿主上报内容高度（撑开 iframe），并响应状态拉取请求
+if(IS_EMBED){
+  const lb = $('launchBtn'); if(lb) lb.classList.remove('hidden');  // 嵌入态才显示「启动寻优」
+  const reportResize = () => postBridge('resize', { height: Math.ceil(document.documentElement.scrollHeight) });
+  if(typeof ResizeObserver !== 'undefined'){
+    const ro = new ResizeObserver(reportResize);
+    ro.observe(document.body);
+  }
+  window.addEventListener('message', e => {
+    if(e.data && e.data.bridge === 'dsh-wb:artifact' && e.data.kind === 'pull'){
+      postBridge('state', { json: buildJSON(), ready: missingRequired().length === 0, warns: syntaxWarns() });
+    }
+  });
+  reportResize();
+}
+</script>
+</body>
+</html>
