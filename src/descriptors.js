@@ -20,7 +20,7 @@ import {
   deleteSessionResultSchema
 } from "./schemas.js";
 
-const PACKAGE = "dsh-workbench";
+const PACKAGE = "@lycheelink/dsh-workbench";
 const NS = "workbench";
 
 function def(method, requestSchema, requestType, resultSchema, resultType) {

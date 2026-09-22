@@ -1,5 +1,5 @@
 /**
- * Smoke tests for dsh-workbench host logic + wire artifacts.
+ * Smoke tests for @lycheelink/dsh-workbench host logic + wire artifacts.
  * Run with: node test/smoke.mjs  (after `npm run build`)
  *
  * Covers:
@@ -425,7 +425,7 @@ assert.ok(Array.isArray(DESCRIPTORS) && DESCRIPTORS.length === 6, "six remote me
 for (const d of DESCRIPTORS) {
   assert.equal(d.service, "workbench", `${d.method}: service key must be workbench`);
   assert.equal(d.namespace, "workbench", `${d.method}: namespace must be workbench`);
-  assert.ok(d.id.startsWith("dsh-workbench#"), `${d.method}: id must be namespaced`);
+  assert.ok(d.id.startsWith("@lycheelink/dsh-workbench#"), `${d.method}: id must be namespaced`);
   assert.equal(d.invocation.kind, "direct", `${d.method}: direct invocation`);
   assert.ok(d.parameters.length >= 1, `${d.method}: request parameter`);
   assert.equal(d.parameters[0].wire, "request", `${d.method}: single request wire`);
@@ -462,7 +462,7 @@ assert.equal("formData" in parsedLeak.value.session, false, "wire schema strips 
 
 // ── TYPERT host manifest (F1) ───────────────────────────────────────────────
 
-assert.equal(TYPERT.package, "dsh-workbench", "manifest must name the owning package");
+assert.equal(TYPERT.package, "@lycheelink/dsh-workbench", "manifest must name the owning package");
 assert.equal(TYPERT.face, "host", "manifest must be the host face");
 assert.ok(Array.isArray(TYPERT.schemas) && TYPERT.schemas.length >= 1, "at least one schema");
 for (const schema of TYPERT.schemas) {

@@ -33,7 +33,7 @@ const indented = raw.split("\n").map((line) => {
   return normalized ? "\t\t" + normalized : "";
 }).join("\n");
 const wrapped =
-  "window.__ModuleLoader__.load({\n\tid: \"dsh-workbench\",\n\tfactory: (require) => {\n\t\tvar module = { exports: {} };\n\t\tvar exports = module.exports;\n" +
+  "window.__ModuleLoader__.load({\n\tid: \"@lycheelink/dsh-workbench\",\n\tfactory: (require) => {\n\t\tvar module = { exports: {} };\n\t\tvar exports = module.exports;\n" +
   indented +
   "\n\t\treturn module.exports;\n\t}\n});\n";
 writeFileSync(clientOut, wrapped, "utf8");

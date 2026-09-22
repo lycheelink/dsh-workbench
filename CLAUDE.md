@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-`dsh-workbench` is an **Enterprise Agent Workbench** plugin for the DeepSeek Harness (DSH) Web UI: a "scene-card" grid where each card opens a dynamic parameter form, and launching a card **creates a real host agent session and injects an assembled prompt** via the host `sessionController` (the same service the web client uses for new conversations). A "control room" view monitors those sessions.
+`@lycheelink/dsh-workbench` is an **Enterprise Agent Workbench** plugin for the DeepSeek Harness (DSH) Web UI: a "scene-card" grid where each card opens a dynamic parameter form, and launching a card **creates a real host agent session and injects an assembled prompt** via the host `sessionController` (the same service the web client uses for new conversations). A "control room" view monitors those sessions.
 
 It is a **pure incremental plugin** — it injects a sidebar nav entry + a full-page layer and a settings tab, and never replaces or disables any official plugin. It follows DSH's "everything is a plugin" architecture (Cordis + Typert Remote + storage domains).
 
@@ -30,7 +30,7 @@ npm run pack:release  # build + npm pack
 Notes:
 - ESM (`"type": "module"`), target node20, react 18, zod v4, esbuild.
 - `test/smoke.mjs` covers host logic + wire-artifact shape; `test/rc-verify.mjs` runs the **real** `@deepseek-ai` typert-loader/registry (0.1.5-rc.2 + 0.1.6-alpha.1) against the built `lib/` manifest. rc-verify **skips gracefully** (exit 0) if `.rc-verify/vendor` was never `setup:rc`-installed — don't read a clean skip as failure.
-- Deploying into a live instance: `node scripts/install-dev.mjs` (symlink) or `dsh plugin --profile web add dsh-workbench`. `cordis.patch.yml` + `dsh.plugin.json` are the bundle-patch / plugin-registration manifests consumed by that flow.
+- Deploying into a live instance: `node scripts/install-dev.mjs` (symlink) or `dsh plugin --profile web add @lycheelink/dsh-workbench`. `cordis.patch.yml` + `dsh.plugin.json` are the bundle-patch / plugin-registration manifests consumed by that flow.
 
 ## Static pages (`pages/`) + publish flow
 

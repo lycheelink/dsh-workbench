@@ -1,9 +1,9 @@
 {
-  "name": "dsh-workbench",
+  "name": "@lycheelink/dsh-workbench",
   "description": "Enterprise Agent Workbench: scene-card grid with dynamic forms, session launch and control room monitoring",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "entry": {
-    "name": "dsh-workbench",
+    "name": "@lycheelink/dsh-workbench",
     "inject": []
   },
   "client": {

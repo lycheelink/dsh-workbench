@@ -1,5 +1,5 @@
 # dsh-workbench bundle patch: registers the Enterprise Agent Workbench plugin.
-# Install with: dsh plugin --profile web add dsh-workbench
+# Install with: dsh plugin --profile web add @lycheelink/dsh-workbench
 - insert:
-    - id: dsh-workbench
-      name: 'dsh-workbench'
+    - id: @lycheelink/dsh-workbench
+      name: '@lycheelink/dsh-workbench'

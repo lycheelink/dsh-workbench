@@ -11,9 +11,15 @@ import { homedir } from "node:os";
 const rootDir = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const profileName = process.argv[2] ?? "web";
 const profileModules = resolve(homedir(), ".dsh/profiles", profileName, "node_modules");
-const linkPath = join(profileModules, "dsh-workbench");
+const scopeDir = join(profileModules, "@lycheelink");
+const linkPath = join(scopeDir, "dsh-workbench");
+const legacyPath = join(profileModules, "dsh-workbench");
 
-mkdirSync(profileModules, { recursive: true });
+mkdirSync(scopeDir, { recursive: true });
+// Best-effort removal of the pre-scoped symlink location (dsh-workbench).
+if (existsSync(legacyPath)) {
+  rmSync(legacyPath, { recursive: true, force: true });
+}
 if (existsSync(linkPath)) {
   rmSync(linkPath, { recursive: true, force: true });
 }

@@ -8,7 +8,7 @@ import { DESCRIPTORS } from "./descriptors.js";
 import { workbenchErrorSchema } from "./schemas.js";
 
 export const TYPERT = {
-  package: "dsh-workbench",
+  package: "@lycheelink/dsh-workbench",
   face: "host",
   schemas: [
     {

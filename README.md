@@ -1,4 +1,4 @@
-# dsh-workbench
+# @lycheelink/dsh-workbench
 
 **Enterprise Agent Workbench** for DeepSeek Harness (DSH) Web UI.
 
@@ -50,7 +50,7 @@
 
 ```bash
 # Clone or copy this package into your DSH profile's node_modules
-dsh plugin --profile web add dsh-workbench
+dsh plugin --profile web add @lycheelink/dsh-workbench
 ```
 
 The package exposes a host typert artifact (`./typert`): the typert-loader

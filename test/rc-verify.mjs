@@ -1,7 +1,7 @@
 /**
  * Real-logic verification: run the ACTUAL @deepseek-ai typert-loader and
  * typert-registry releases (0.1.5-rc.2 + 0.1.6-alpha.1) against the built
- * dsh-workbench artifacts (lib/typert.js, lib/descriptors.js).
+ * @lycheelink/dsh-workbench artifacts (lib/typert.js, lib/descriptors.js).
  *
  * This is the same code the host runs at the manifest boundary:
  *   - validateTypertManifest(pkgName, TYPERT)  → the typert-loader gate
@@ -111,10 +111,10 @@ function expectThrows(label, fn, pattern) {
 // ── 1. Real typert-loader validateTypertManifest ────────────────────────────
 
 // 0.1.5-rc.2 (latest RC): schemas must be zod v4 instances (`_zod`), codecs too.
-assert.equal(validateRc2("dsh-workbench", TYPERT).package, "dsh-workbench", "rc2 loader accepts the manifest");
+assert.equal(validateRc2("@lycheelink/dsh-workbench", TYPERT).package, "@lycheelink/dsh-workbench", "rc2 loader accepts the manifest");
 
 // 0.1.6-alpha.1 (master line): schemas must also expose a `create()` factory.
-assert.equal(validateNext("dsh-workbench", TYPERT).package, "dsh-workbench", "next loader accepts the dual-shape manifest");
+assert.equal(validateNext("@lycheelink/dsh-workbench", TYPERT).package, "@lycheelink/dsh-workbench", "next loader accepts the dual-shape manifest");
 
 // ── 2. Real typert-registry register() (deep invoke/schema/package validation)
 
@@ -131,7 +131,7 @@ r.dispose();
 // Loader@0.1.5-rc.2 requires an eager zod v4 schema (`_zod`) on manifest schemas.
 expectThrows(
   "rc2 loader rejects schemas without an eager zod schema",
-  () => validateRc2("dsh-workbench", { ...TYPERT, schemas: TYPERT.schemas.map((s) => ({ name: s.name, create: s.create })) }),
+  () => validateRc2("@lycheelink/dsh-workbench", { ...TYPERT, schemas: TYPERT.schemas.map((s) => ({ name: s.name, create: s.create })) }),
   /zod v4/
 );
 
@@ -139,7 +139,7 @@ expectThrows(
 // factory requirement was added on master AFTER this alpha).
 expectThrows(
   "next loader rejects schemas without an eager zod schema",
-  () => validateNext("dsh-workbench", { ...TYPERT, schemas: TYPERT.schemas.map((s) => ({ name: s.name, create: s.create })) }),
+  () => validateNext("@lycheelink/dsh-workbench", { ...TYPERT, schemas: TYPERT.schemas.map((s) => ({ name: s.name, create: s.create })) }),
   /zod v4/
 );
 
@@ -156,12 +156,12 @@ for (const [label, RegistryCtor] of [["rc2 registry", RegistryRc2], ["next regis
 // Loader package-ownership gate (both versions).
 expectThrows(
   "rc2 loader rejects a manifest owned by another package",
-  () => validateRc2("dsh-workbench", { ...TYPERT, package: "dsh-other" }),
+  () => validateRc2("@lycheelink/dsh-workbench", { ...TYPERT, package: "dsh-other" }),
   /must be owned by the package/
 );
 expectThrows(
   "next loader rejects a manifest owned by another package",
-  () => validateNext("dsh-workbench", { ...TYPERT, package: "dsh-other" }),
+  () => validateNext("@lycheelink/dsh-workbench", { ...TYPERT, package: "dsh-other" }),
   /must be owned by the package/
 );
 

@@ -6,7 +6,7 @@
 import { DESCRIPTORS } from "./descriptors.js";
 
 export const TYPERT_REMOTE = {
-  package: "dsh-workbench",
+  package: "@lycheelink/dsh-workbench",
   descriptors: DESCRIPTORS
 };
 
