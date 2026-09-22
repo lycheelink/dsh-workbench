@@ -1,0 +1,129 @@
+name: publish
+
+# Tag-driven npm publish for @lycheelink/dsh-workbench.
+#
+# Flow: push a `vX.Y.Z` tag whose version equals package.json.version →
+# full gate (ci → build → test) → pack + validate the artifact → publish
+# the exact validated tarball to registry.npmjs.org.
+#
+# - Stable versions (no `-` prerelease suffix) go to `latest`;
+#   prereleases go to `next`.
+# - `--provenance` attaches a sigstore-signed provenance statement; it
+#   requires GitHub Actions OIDC, which only verifies for PUBLIC repos.
+# - Requires a repo secret `NODE_AUTH_TOKEN`: a granular npm token with
+#   read+write on the @lycheelink/dsh-workbench package.
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+  id-token: write # npm provenance (OIDC)
+
+concurrency:
+  group: npm-publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: https://registry.npmjs.org
+          cache: npm
+
+      - name: Verify tag equals package.json version
+        run: |
+          TAG="${GITHUB_REF#refs/tags/}"
+          VERSION="v$(node -p "require('./package.json').version")"
+          if [ "$TAG" != "$VERSION" ]; then
+            echo "tag '$TAG' does not match package.json version '$VERSION' — aborting"
+            exit 1
+          fi
+
+      - name: Install deps
+        run: npm ci
+
+      - name: Build host + client
+        run: npm run build
+
+      - name: Test (smoke + rc-verify)
+        run: npm test
+
+      - name: Pack and validate the artifact
+        run: |
+          npm pack --pack-destination "$RUNNER_TEMP"
+          mv "$RUNNER_TEMP"/lycheelink-dsh-workbench-*.tgz "$RUNNER_TEMP/pkg.tgz"
+          mkdir -p "$RUNNER_TEMP/unpack"
+          tar -xzf "$RUNNER_TEMP/pkg.tgz" -C "$RUNNER_TEMP/unpack"
+          # Every runtime surface must ship.
+          for f in \
+            package/lib/index.js \
+            package/lib/typert.js \
+            package/lib/client.js \
+            package/lib/descriptors.js \
+            package/lib/remote.js \
+            package/cordis.patch.yml \
+            package/dsh.plugin.json; do
+            test -f "$RUNNER_TEMP/unpack/$f" || { echo "missing $f in tarball"; exit 1; }
+          done
+          # No dependency tree may leak into the published artifact.
+          test ! -d "$RUNNER_TEMP/unpack/package/node_modules" || {
+            echo "node_modules leaked into tarball"; exit 1;
+          }
+          echo "artifact validated: $(basename "$RUNNER_TEMP/pkg.tgz")"
+
+      - name: Determine dist-tag
+        id: dist-tag
+        run: |
+          VERSION="$(node -p "require('./package.json').version")"
+          if [[ "$VERSION" == *-* ]]; then
+            echo "dist-tag=next" >> "$GITHUB_OUTPUT"
+          else
+            echo "dist-tag=latest" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Guard against moving latest backwards
+        run: |
+          VERSION="$(node -p "require('./package.json').version")"
+          if [ "${{ steps.dist-tag.outputs.dist-tag }}" = "latest" ]; then
+            CURRENT="$(npm view @lycheelink/dsh-workbench dist-tags.latest 2>/dev/null || true)"
+            if [ -n "$CURRENT" ]; then
+              HIGHEST="$(printf '%s\n%s\n' "$VERSION" "$CURRENT" | sort -V | tail -1)"
+              if [ "$HIGHEST" != "$VERSION" ]; then
+                echo "refusing to publish: $VERSION is not newer than latest $CURRENT"
+                exit 1
+              fi
+            fi
+          fi
+
+      - name: Publish to npm
+        run: |
+          npm publish "$RUNNER_TEMP/pkg.tgz" \
+            --tag "${{ steps.dist-tag.outputs.dist-tag }}" \
+            --provenance \
+            --access public \
+            --registry https://registry.npmjs.org
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NODE_AUTH_TOKEN }}
+
+      - name: Verify published version and dist-tag
+        run: |
+          VERSION="$(node -p "require('./package.json').version")"
+          PUBLISHED="$(npm view "@lycheelink/dsh-workbench@${VERSION}" version)"
+          if [ "$PUBLISHED" != "$VERSION" ]; then
+            echo "published version mismatch: got '$PUBLISHED'"
+            exit 1
+          fi
+          TAGGED="$(npm view "@lycheelink/dsh-workbench@${{ steps.dist-tag.outputs.dist-tag }}" version)"
+          if [ "$TAGGED" != "$VERSION" ]; then
+            echo "dist-tag '${{ steps.dist-tag.outputs.dist-tag }}' does not point at $VERSION"
+            exit 1
+          fi
+          echo "verified: @lycheelink/dsh-workbench@$VERSION on '${{ steps.dist-tag.outputs.dist-tag }}'"
