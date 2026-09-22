@@ -3,6 +3,10 @@
   "description": "Enterprise Agent Workbench: scene-card grid with dynamic parameter forms, session launch, and control room monitoring for DSH Web UI",
   "version": "0.1.1",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lycheelink/dsh-workbench.git"
+  },
   "type": "module",
   "main": "lib/index.js",
   "types": "lib/types/index.d.ts",
@@ -77,5 +81,8 @@
     "install:dev": "node scripts/install-dev.mjs",
     "sync:artifact": "node scripts/sync-artifact.mjs",
     "pack:release": "npm run build && node scripts/package-release.mjs"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
