@@ -18,5 +18,7 @@ jobs:
         run: npm ci
       - name: Build host + client
         run: npm run build
+      - name: Doc drift check (dist/index.html vs index.md)
+        run: python3 scripts/build-doc.py --check
       - name: Smoke + rc-verify
         run: npm test

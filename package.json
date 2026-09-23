@@ -80,6 +80,8 @@
     "setup:rc": "npm install --prefix .rc-verify/vendor --legacy-peer-deps",
     "install:dev": "node scripts/install-dev.mjs",
     "sync:artifact": "node scripts/sync-artifact.mjs",
+    "build:doc": "python3 scripts/build-doc.py",
+    "check:doc": "python3 scripts/build-doc.py --check",
     "pack:release": "npm run build && node scripts/package-release.mjs"
   },
   "publishConfig": {

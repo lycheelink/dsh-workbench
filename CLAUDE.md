@@ -23,6 +23,8 @@ npm run test:rc       # rc-verify alone
 npm run setup:rc      # vendored real typert-loader/registry releases → .rc-verify/vendor (run once after clone for full test coverage)
 npm run install:dev   # symlink this package → ~/.dsh/profiles/web/node_modules/dsh-workbench
 npm run sync:artifact # refresh vendored artifact consoles from the repo's own canonical pages/cloudflare-pages/dist → src/client/artifacts/ (strip is idempotent); node scripts/sync-artifact.mjs [cardId]
+npm run build:doc     # pages/cloudflare-pages/index.md + _template.html → dist/index.html (zero-dep python3, scripts/build-doc.py)
+npm run check:doc     # rebuild + byte-compare dist/index.html against the md (drift gate; also in CI + publish --check)
 npm run pack:release  # build + npm pack
 ./pages/publish.sh    # deploy pages/cloudflare-pages/dist → https://dsh-workbench.pages.dev (see --help; needs pages/publish.env, gitignored)
 ```
@@ -36,7 +38,8 @@ Notes:
 
 Since the 2026-09 migration this repo is the **single canonical source of truth** for the three parameter consoles (寻优参数采集台 / Profiling 参数采集台 / 验证流测试台) — the same HTML files that `npm run sync:artifact` embeds into the client bundle and that `pages/publish.sh` deploys. **Edit them in `pages/cloudflare-pages/dist/`; never hand-edit `src/client/artifacts/*.html`** (run `sync:artifact` instead). The consoles are dual-mode: standalone on Cloudflare Pages + embedded (`window.__DASH_EMBED__=true`) in the plugin's sandboxed iframe.
 
-- `pages/publish.sh` deploys `pages/cloudflare-pages/dist/` → `https://dsh-workbench.pages.dev` (wrangler project `dsh-workbench`). Credentials come from `pages/publish.env` (copy `pages/publish.env.example`, **never commit**). Modes: `--check` / `--dry-run` / `--force` / `--help`. It runs a pollution self-check (Prism token / copy-btn / `language-` DOM-rewrite markers) plus a post-deploy byte-size spot check (Pages SPA-fallback returns index.html with HTTP 200 for missing paths).
+- `pages/publish.sh` deploys `pages/cloudflare-pages/dist/` → `https://dsh-workbench.pages.dev` (wrangler project `dsh-workbench`). Credentials come from `pages/publish.env` (copy `pages/publish.env.example`, **never commit**). Modes: `--check` / `--dry-run` / `--force` / `--help`. It runs a pollution self-check (Prism token / copy-btn / `language-` DOM-rewrite markers) plus a doc-drift check (`scripts/build-doc.py --check`) plus a post-deploy byte-size spot check (Pages SPA-fallback returns index.html with HTTP 200 for missing paths).
+- The **docs landing page `dist/index.html` (dsh-TUI 上手) is generated** from `pages/cloudflare-pages/index.md` + `_template.html` via `scripts/build-doc.py` (zero-dep stdlib; `npm run build:doc` / `check:doc`). **Edit `index.md`, never `dist/index.html`** — the md is the source of truth, and `test.yml` + `publish.sh --check` both fail on drift (committed HTML must byte-equal the regenerated output). It is *not* an artifact card, so it never enters `src/client/artifacts/`. The other four dist pages are interactive consoles and stay hand-authored.
 - The dist HTMLs are committed **clean** (builder `data-page-node-id` noise stripped) — these are the canonical files.
 - CI caveat: `package-lock.json` pins ~70 transitive `@deepseek-ai/*` tarballs to `mirrors.huaweicloud.com`; the GitHub Actions `npm ci` depends on that mirror being reachable from runners. If it flakes, add a project `.npmrc` (`replace-registry-host=always` + registry) or demote the gate.
 
