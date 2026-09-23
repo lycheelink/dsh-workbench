@@ -116,14 +116,24 @@ jobs:
       - name: Verify published version and dist-tag
         run: |
           VERSION="$(node -p "require('./package.json').version")"
-          PUBLISHED="$(npm view "@lycheelink/dsh-workbench@${VERSION}" version)"
+          TAG="${{ steps.dist-tag.outputs.dist-tag }}"
+          # npmjs packument reads can lag a second or two after publish, and
+          # stale 404s can sit in the local npm cache — retry with
+          # --prefer-online so a healthy publish never fails this step.
+          for attempt in 1 2 3 4 5 6 7 8 9 10; do
+            PUBLISHED="$(npm view "@lycheelink/dsh-workbench@${VERSION}" version --prefer-online 2>/dev/null || true)"
+            TAGGED="$(npm view "@lycheelink/dsh-workbench@${TAG}" version --prefer-online 2>/dev/null || true)"
+            if [ "$PUBLISHED" = "$VERSION" ] && [ "$TAGGED" = "$VERSION" ]; then
+              break
+            fi
+            sleep 5
+          done
           if [ "$PUBLISHED" != "$VERSION" ]; then
             echo "published version mismatch: got '$PUBLISHED'"
             exit 1
           fi
-          TAGGED="$(npm view "@lycheelink/dsh-workbench@${{ steps.dist-tag.outputs.dist-tag }}" version)"
           if [ "$TAGGED" != "$VERSION" ]; then
-            echo "dist-tag '${{ steps.dist-tag.outputs.dist-tag }}' does not point at $VERSION"
+            echo "dist-tag '${TAG}' does not point at $VERSION"
             exit 1
           fi
-          echo "verified: @lycheelink/dsh-workbench@$VERSION on '${{ steps.dist-tag.outputs.dist-tag }}'"
+          echo "verified: @lycheelink/dsh-workbench@$VERSION on '$TAG'"
