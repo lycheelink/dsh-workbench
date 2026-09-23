@@ -117,23 +117,26 @@ jobs:
         run: |
           VERSION="$(node -p "require('./package.json').version")"
           TAG="${{ steps.dist-tag.outputs.dist-tag }}"
-          # npmjs packument reads can lag a second or two after publish, and
-          # stale 404s can sit in the local npm cache — retry with
-          # --prefer-online so a healthy publish never fails this step.
-          for attempt in 1 2 3 4 5 6 7 8 9 10; do
-            PUBLISHED="$(npm view "@lycheelink/dsh-workbench@${VERSION}" version --prefer-online 2>/dev/null || true)"
-            TAGGED="$(npm view "@lycheelink/dsh-workbench@${TAG}" version --prefer-online 2>/dev/null || true)"
+          # npm can hold a fresh version in a "being processed" pipeline for
+          # minutes before the packument serves it (observed on v0.1.2: the
+          # publish notice said "may take a few minutes to become available",
+          # and the version only appeared ~2min after publish). Poll the live
+          # packument until the version and dist-tag resolve (15 min max).
+          for attempt in $(seq 1 90); do
+            PACK="$(curl -fsS "https://registry.npmjs.org/@lycheelink%2fdsh-workbench" 2>/dev/null || true)"
+            PUBLISHED="$(printf '%s' "$PACK" | jq -r --arg v "$VERSION" '.versions[$v].version // empty')"
+            TAGGED="$(printf '%s' "$PACK" | jq -r --arg t "$TAG" '.dist-tags[$t] // empty')"
             if [ "$PUBLISHED" = "$VERSION" ] && [ "$TAGGED" = "$VERSION" ]; then
               break
             fi
-            sleep 5
+            sleep 10
           done
           if [ "$PUBLISHED" != "$VERSION" ]; then
-            echo "published version mismatch: got '$PUBLISHED'"
+            echo "published version not visible after retries: got '$PUBLISHED'"
             exit 1
           fi
           if [ "$TAGGED" != "$VERSION" ]; then
-            echo "dist-tag '${TAG}' does not point at $VERSION"
+            echo "dist-tag '${TAG}' does not point at $VERSION (got '$TAGGED')"
             exit 1
           fi
           echo "verified: @lycheelink/dsh-workbench@$VERSION on '$TAG'"
