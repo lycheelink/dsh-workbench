@@ -1,7 +1,7 @@
 {
   "name": "@lycheelink/dsh-workbench",
   "description": "Enterprise Agent Workbench: scene-card grid with dynamic parameter forms, session launch, and control room monitoring for DSH Web UI",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "license": "MIT",
   "repository": {
     "type": "git",
