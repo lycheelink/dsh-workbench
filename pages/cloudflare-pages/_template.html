@@ -539,6 +539,9 @@ table td:first-child{color:#fff}
   background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;
 }
 .tile .t-k{font-family:var(--font-mono);font-size:12px;color:var(--accent);margin:0 0 8px;display:block}
+/* tile 标题可写成 md 链接（首页工具卡）：虚下划线暗示可点，hover 转实线 */
+.tile .t-k a{border-bottom:1px dashed var(--accent-line);transition:border-color .2s}
+.tile .t-k a:hover{border-bottom-color:var(--accent)}
 .tile .t-d{font-size:14px;color:var(--text-secondary);margin:0}
 .tile .t-d strong{color:var(--text)}
 

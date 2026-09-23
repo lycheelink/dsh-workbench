@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-build-doc.py — 把 pages/cloudflare-pages/index.md 渲染成 dist/index.html。
+build-doc.py — 把 pages/cloudflare-pages/*.md 渲染成 dist/*.html。
 
-零依赖（仅标准库，python3.8+）。本页的 CSS / JS 都在 _template.html 里，
+零依赖（仅标准库，python3.8+）。页面的 CSS / JS 都在 _template.html 里（全部生成页共用），
 本脚本只负责：解析 md（标准子集 + 指令块）→ 生成正文与 TOC → 填入模版。
 
 用法（在仓库根目录）：
-    python3 scripts/build-doc.py             # 生成 pages/cloudflare-pages/dist/index.html
-    python3 scripts/build-doc.py --check     # 仅校验：重生成并与已提交的 dist 字节比对
-    python3 scripts/build-doc.py --page index   # 通用入口（当前仅 index）
+    python3 scripts/build-doc.py                  # 生成全部页（*.md，下划线开头除外）
+    python3 scripts/build-doc.py --check          # 仅校验：逐页重生成并与已提交 dist 字节比对
+    python3 scripts/build-doc.py --page <name>    # 只构建单页（如 --page index）
 
 指令词汇（标准语法优先；仅无 markdown 等价物者用 :: 指令块）：
     标准：> 文本 → 普通引用 · > [!note|warn|danger|ok] → 提示块 · > [!aside] → 灰小字
@@ -158,11 +158,20 @@ def parse_fence(lines, i, out):
     return i
 
 
+def split_row(s):
+    """表格行按未转义的 | 切分；单元格内的 \\| 还原为 |。"""
+    parts = re.split(r"(?<!\\)\|", s.strip())
+    if parts and parts[0].strip() == "":
+        parts = parts[1:]
+    if parts and parts[-1].strip() == "":
+        parts = parts[:-1]
+    return [p.strip().replace("\\|", "|") for p in parts]
+
+
 def parse_table(lines, i, out):
     rows = []
     while i < len(lines) and lines[i].strip().startswith("|"):
-        row = [c.strip() for c in lines[i].strip().strip("|").split("|")]
-        rows.append(row)
+        rows.append(split_row(lines[i]))
         i += 1
     if len(rows) >= 2:
         header, body = rows[0], rows[2:]
@@ -493,9 +502,10 @@ def dir_grid2(buf, arg, out, parent):
             continue
         m = re.match(r"^tile\s+(.+?)\s*\|\s*(.+)$", s)
         if m:
-            tiles.append((m.group(1).strip(), render_inline(m.group(2))))
+            # t-k 走行内渲染：标题可直接写 md 链接（首页工具卡），纯文本时等价原样
+            tiles.append((render_inline(m.group(1).strip()), render_inline(m.group(2))))
     html = "".join('<div class="tile"><span class="t-k">%s</span><p class="t-d">%s</p></div>'
-                   % (esc(k), v) for k, v in tiles)
+                   % (k, v) for k, v in tiles)
     out.append('<div class="grid2">\n%s\n</div>' % html)
 
 
@@ -573,30 +583,44 @@ def self_check(result):
         sys.exit(1)
 
 
-def main():
-    args = sys.argv[1:]
-    page = "index"
-    if "--page" in args:
-        page = args[args.index("--page") + 1]
+def build_page(page):
     global MD_PATH, TEMPLATE_PATH, OUT_PATH
     MD_PATH = PAGE_DIR / ("%s.md" % page)
     TEMPLATE_PATH = PAGE_DIR / "_template.html"
     OUT_PATH = PAGE_DIR / "dist" / ("%s.html" % page)
     if not MD_PATH.exists():
-        print("✗ 没有 %s（当前仅接 index.md）" % MD_PATH.relative_to(ROOT))
-        sys.exit(1)
+        raise FileNotFoundError("没有 %s" % MD_PATH.relative_to(ROOT))
     result = build()
     self_check(result)
-    if "--check" in args:
-        existing = OUT_PATH.read_text(encoding="utf-8") if OUT_PATH.exists() else ""
-        if result != existing:
-            print("✗ dist/%s.html 与 %s.md 不一致 —— 请先运行 `python3 scripts/build-doc.py` 重新生成再提交。"
-                  % (page, page))
-            sys.exit(1)
-        print("✓ dist/%s.html 与 %s.md 一致（%d 字节）" % (page, page, len(result)))
-    else:
-        OUT_PATH.write_text(result, encoding="utf-8")
-        print("✓ 已生成 %s" % OUT_PATH.relative_to(ROOT))
+    return result
+
+
+def main():
+    args = sys.argv[1:]
+    only = args[args.index("--page") + 1] if "--page" in args else None
+    if only:
+        pages = [only]
+    else:  # 默认：pages/cloudflare-pages/*.md 全部（下划线开头的忽略）
+        pages = sorted(p.stem for p in PAGE_DIR.glob("*.md") if not p.stem.startswith("_"))
+    if not pages:
+        print("✗ pages/cloudflare-pages/ 下没有 .md 源"); sys.exit(1)
+    bad = 0
+    for page in pages:
+        try:
+            result = build_page(page)
+        except Exception as e:
+            print("✗ %s.md 生成失败：%s" % (page, e)); bad += 1; continue
+        if "--check" in args:
+            existing = OUT_PATH.read_text(encoding="utf-8") if OUT_PATH.exists() else ""
+            if result != existing:
+                print("✗ dist/%s.html 与 %s.md 不一致 —— 请先运行 python3 scripts/build-doc.py 重新生成再提交。" % (page, page))
+                bad += 1
+            else:
+                print("✓ dist/%s.html 与 %s.md 一致（%d 字节）" % (page, page, len(result)))
+        else:
+            OUT_PATH.write_text(result, encoding="utf-8")
+            print("✓ 已生成 %s" % OUT_PATH.relative_to(ROOT))
+    sys.exit(1 if bad else 0)
 
 
 if __name__ == "__main__":

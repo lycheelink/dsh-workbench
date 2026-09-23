@@ -95,7 +95,7 @@ if [ "$POLLUTED" != "0" ]; then
 fi
 
 # ---------- 2.5 文档漂移自检 ----------
-# dist/index.html 由 pages/cloudflare-pages/index.md + _template.html 生成；
+# dist/*.html 文档页由 pages/cloudflare-pages/*.md + _template.html 生成；
 # 提交进 dist 前保证「已提交 HTML == 源码」，避免静默漂移。
 echo ""
 echo "$P 文档漂移自检："
@@ -103,7 +103,7 @@ if command -v python3 >/dev/null 2>&1; then
   if python3 "$ROOT/../scripts/build-doc.py" --check; then
     :
   else
-    echo "$P ✗ dist/index.html 与 index.md 不一致 —— 请先运行 python3 scripts/build-doc.py 重新生成再提交。"
+    echo "$P ✗ dist 文档页与 md 源码不一致 —— 请先运行 python3 scripts/build-doc.py 重新生成再提交。"
     [ "$FORCE" = "1" ] || exit 3
   fi
 else

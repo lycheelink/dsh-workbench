@@ -2,7 +2,7 @@
 <html lang="zh-CN"><head>
 <meta charset="utf-8">
 <meta content="width=device-width, initial-scale=1" name="viewport">
-<title>dsh-workbench · 企业 Agent 工作台</title>
+<title>DSH 安装使用手册</title>
 <link crossorigin="" href="https://cdn.jsdelivr.net" rel="preconnect">
 <!-- Geist Sans 改由页面内 @font-face + 拉丁 unicode-range 声明（见 style 头部）——
      否则其内置的中文标点字形会以窄体度量截走 CJK 全宽标点，导致标点与汉字间距过小 -->
@@ -629,75 +629,442 @@ section[id]{scroll-margin-top:28px}
   <div class="toc-panel">
   <div class="toc-title">本页导航</div>
   <div class="toc-list">
-  <a class="toc-link" href="#sec-1"><span class="toc-no">01</span><span class="toc-txt">两种用法</span></a>
-<a class="toc-link" href="#sec-2"><span class="toc-no">02</span><span class="toc-txt">工具与文档</span></a>
-<a class="toc-link" href="#sec-3"><span class="toc-no">03</span><span class="toc-txt">站点地图</span></a>
+  <a class="toc-link" href="#sec-0"><span class="toc-no">00</span><span class="toc-txt">三分钟上手</span></a>
+<a class="toc-link" href="#sec-1"><span class="toc-no">01</span><span class="toc-txt">安装前准备</span></a>
+<a class="toc-link toc-sub" href="#sec-1-1"><span class="toc-no">1.1</span><span class="toc-txt">Node.js 版本</span></a>
+<a class="toc-link toc-sub" href="#sec-1-2"><span class="toc-no">1.2</span><span class="toc-txt">网络要求</span></a>
+<a class="toc-link toc-sub" href="#sec-1-3"><span class="toc-no">1.3</span><span class="toc-txt">安装前检查清单</span></a>
+<a class="toc-link" href="#sec-2"><span class="toc-no">02</span><span class="toc-txt">安装 DSH</span></a>
+<a class="toc-link toc-sub" href="#sec-2-1"><span class="toc-no">2.1</span><span class="toc-txt">全局安装（推荐）</span></a>
+<a class="toc-link toc-sub" href="#sec-2-2"><span class="toc-no">2.2</span><span class="toc-txt">临时体验（不想装进系统）</span></a>
+<a class="toc-link toc-sub" href="#sec-2-3"><span class="toc-no">2.3</span><span class="toc-txt">卸载</span></a>
+<a class="toc-link" href="#sec-3"><span class="toc-no">03</span><span class="toc-txt">启动与首次使用</span></a>
+<a class="toc-link toc-sub" href="#sec-3-1"><span class="toc-no">3.1</span><span class="toc-txt">启动</span></a>
+<a class="toc-link toc-sub" href="#sec-3-2"><span class="toc-no">3.2</span><span class="toc-txt">必须使用启动日志输出的地址访问</span></a>
+<a class="toc-link toc-sub" href="#sec-3-3"><span class="toc-no">3.3</span><span class="toc-txt">首次使用的三步配置</span></a>
+<a class="toc-link" href="#sec-4"><span class="toc-no">04</span><span class="toc-txt">日常使用</span></a>
+<a class="toc-link toc-sub" href="#sec-4-1"><span class="toc-no">4.1</span><span class="toc-txt">工作区</span></a>
+<a class="toc-link toc-sub" href="#sec-4-2"><span class="toc-no">4.2</span><span class="toc-txt">数据都存在哪</span></a>
+<a class="toc-link toc-sub" href="#sec-4-3"><span class="toc-no">4.3</span><span class="toc-txt">关闭与重启</span></a>
+<a class="toc-link" href="#sec-5"><span class="toc-no">05</span><span class="toc-txt">安装插件</span></a>
+<a class="toc-link toc-sub" href="#sec-5-1"><span class="toc-no">5.1</span><span class="toc-txt">安装规则</span></a>
+<a class="toc-link toc-sub" href="#sec-5-2"><span class="toc-no">5.2</span><span class="toc-txt">常用命令</span></a>
+<a class="toc-link toc-sub" href="#sec-5-3"><span class="toc-no">5.3</span><span class="toc-txt">推荐插件</span></a>
+<a class="toc-link toc-sub" href="#sec-5-4"><span class="toc-no">5.4</span><span class="toc-txt">批量安装</span></a>
+<a class="toc-link toc-sub" href="#sec-5-5"><span class="toc-no">5.5</span><span class="toc-txt">验证插件真的生效</span></a>
+<a class="toc-link" href="#sec-6"><span class="toc-no">06</span><span class="toc-txt">安装技能（Skill）</span></a>
+<a class="toc-link toc-sub" href="#sec-6-1"><span class="toc-no">6.1</span><span class="toc-txt">前置：装好技能管理器</span></a>
+<a class="toc-link toc-sub" href="#sec-6-2"><span class="toc-no">6.2</span><span class="toc-txt">准备技能 ZIP</span></a>
+<a class="toc-link toc-sub" href="#sec-6-3"><span class="toc-no">6.3</span><span class="toc-txt">在页面里安装</span></a>
+<a class="toc-link toc-sub" href="#sec-6-4"><span class="toc-no">6.4</span><span class="toc-txt">日常管理</span></a>
+<a class="toc-link toc-sub" href="#sec-6-5"><span class="toc-no">6.5</span><span class="toc-txt">注意事项</span></a>
+<a class="toc-link" href="#sec-7"><span class="toc-no">07</span><span class="toc-txt">可选：连接外部 MCP 工具</span></a>
+<a class="toc-link" href="#sec-8"><span class="toc-no">08</span><span class="toc-txt">常见问题排查</span></a>
+<a class="toc-link toc-sub" href="#sec-8-1"><span class="toc-no">8.1</span><span class="toc-txt">原生模块被拦截（`ERR_PNPM_IGNORED_BUILDS`）</span></a>
+<a class="toc-link toc-sub" href="#sec-8-2"><span class="toc-no">8.2</span><span class="toc-txt">「暂时无法保存确认状态，请重试。」</span></a>
+<a class="toc-link" href="#sec-9"><span class="toc-no">09</span><span class="toc-txt">安全提醒与备份</span></a>
+<a class="toc-link" href="#sec-10"><span class="toc-no">10</span><span class="toc-txt">升级、重装与彻底删除</span></a>
+<a class="toc-link" href="#sec-11"><span class="toc-no">11</span><span class="toc-txt">附录：速查</span></a>
   </div>
   </div>
 </nav>
 
 <header class="doc-hero">
 <div>
-<span class="eyebrow"><span class="dot"></span>DSH Web · 企业 Agent 工作台</span>
-<h1><span class="grad">dsh-workbench</span></h1>
-<p class="hero-sub">一套工作台，两种用法：<strong>装成 dsh web 插件</strong>——场景卡片即参数表单，点卡即建真实宿主会话并注入组装好的提示词；<strong>或免安装直接用</strong>——本站托管的独立参数采集工具离线填表，实时产出结构化 JSON 与触发指令，直接粘给 dsh-TUI 触发 SKILL 执行。</p>
-<ul class="hero-meta"><li class="chip">npm @lycheelink/dsh-workbench</li><li class="chip">v0.1.2</li><li class="chip">纯增量注入</li></ul>
+<span class="eyebrow"><span class="dot"></span>DeepSeek Harness · 面向最终用户</span>
+<h1><span class="grad">DSH 安装使用手册</span></h1>
+<p class="hero-sub">覆盖安装、启动、插件与技能管理、MCP 接入、故障排查与安全备份。核心规则只有一条：<strong>安装与升级都必须显式锁定版本号</strong>——本文以 <code>0.1.2-rc.1</code> 为基线，所有命令可直接复制执行。</p>
+<ul class="hero-meta"><li class="chip">v1.1</li><li class="chip">2026-09-23</li><li class="chip">macOS / Node v22.22.2 实测</li></ul>
 </div>
 <div class="hero-side">
-<div class="mini"><span class="k">插件形态</span><span class="v">侧栏「工作台」入口 + 整页场景卡 + 控制房监控，不替换任何官方插件；启动的会话在宿主会话列表中可见。</span></div><div class="mini"><span class="k">工具形态</span><span class="v">三个参数采集台（寻优 / Profiling / 验证流）+ 工作台在线预览，全部为单文件 HTML，支持离线使用。</span></div><div class="mini"><span class="k">文档</span><span class="v">宿主安装看 <a href="dsh-quick-start.html" target="_blank" rel="noopener">DSH Quick Start</a>，终端上手看 <a href="dsh-tui-quick-start.html" target="_blank" rel="noopener">dsh-TUI Quick Start</a>。</span></div>
+<div class="mini"><span class="k">锁定版本</span><span class="v">宿主 <code>@deepseek-ai/dsh@0.1.2-rc.1</code>；插件以 npm 精确版本或 GitHub <code>#commit</code> 哈希锁定。</span></div><div class="mini"><span class="k">访问方式</span><span class="v">只认启动日志打印的、带 <code>?token=</code> 的完整地址；手输 <code>127.0.0.1:3080</code> 会 401。</span></div><div class="mini"><span class="k">生效条件</span><span class="v">安装或卸载<strong>插件</strong>后必须重启 <code>dsh web</code>，刷新浏览器无效；<strong>技能</strong>则无需重启。</span></div>
 </div>
-</header><section id="sec-1" class="sec reveal">
+</header><section aria-label="关键数字" class="stat-band reveal">
+<div class="stat"><span class="n">523</span><p class="d">一次全局安装引入的依赖包数：约 7 分钟，期间请勿中断</p></div><div class="stat"><span class="n">12</span><p class="d">已实测插件：4 个推荐 · 6 个按需 · 2 个运维（版本见 §5.3）</p></div><div class="stat"><span class="n">5</span><p class="d">必守规则：锁版本 · 带 token 访问 · 装后重启 · 装后验证 · 勿装重复能力</p></div>
+</section><section id="sec-0" class="sec reveal">
+<div class="sec-head">
+<span class="sec-num">SECTION 00</span>
+<h2>0. 三分钟上手</h2>
+<p class="desc">四步完成从零到可用；动手前先记住本节末的五条守则。</p></div>
+<ol class="timeline">
+<li>
+<p class="t-title"><strong>安装</strong><span class="step-tag">约 7 分钟 · 勿中断</span></p>
+<div class="code-block">
+<div class="code-head"><span class="dots"><i></i><i></i><i></i></span><span class="lang">sh</span></div>
+<pre><code># 必须锁定版本号，不要安装最新版
+npm install -g @deepseek-ai/dsh@0.1.2-rc.1</code></pre>
+</div><p class="t-body">共引入约 523 个包，属正常现象；完成后核对 <code>dsh --version</code>（见 §2.1）。</p>
+</li>
+<li>
+<p class="t-title"><strong>安装插件</strong><span class="step-tag">无需 dsh web 运行中</span></p>
+<div class="code-block">
+<div class="code-head"><span class="dots"><i></i><i></i><i></i></span><span class="lang">sh</span></div>
+<pre><code>dsh plugin --profile web add "github:caoyiwei850/dsh-ssh-ops#6fdd0c33869dd9824860eb6295574736b8360634"
+dsh plugin --profile web add "github:lycheelink/dsh-skill-manager.git#f3703dca136bab14032dd5e1ae7d5754bbef7e1a"</code></pre>
+</div><p class="t-body">插件清单与选择建议见 §5.3；<code>--profile web</code> 的位置有讲究（见 §5.2）。</p>
+</li>
+<li>
+<p class="t-title"><strong>启动</strong><span class="step-tag">在目标工作区目录</span></p>
+<div class="code-block">
+<div class="code-head"><span class="dots"><i></i><i></i><i></i></span><span class="lang">sh</span></div>
+<pre><code>cd ~/your-project
+dsh web</code></pre>
+</div>
+</li>
+<li>
+<p class="t-title"><strong>打开界面</strong><span class="step-tag">复制完整地址</span></p>
+<div class="code-block">
+<div class="code-head"><span class="dots"><i></i><i></i><i></i></span><span class="lang">text</span></div>
+<pre><code>dsh web: http://127.0.0.1:3080/?token=xxxxxxxxxx</code></pre>
+</div><p class="t-body">必须复制包含 <code>?token=</code> 的完整地址在浏览器打开；手动输入 <code>127.0.0.1:3080</code> 将返回 401（见 §3.2）。</p>
+</li>
+</ol><p><strong>安装与使用五条守则</strong>：</p><ol>
+<li><strong>安装时须显式指定版本号 <code>0.1.2-rc.1</code></strong>。当前版本迭代频繁且不稳定，请勿安装默认最新版（见 §2.1）；</li>
+<li><strong>使用启动日志中打印的、带 <code>?token=</code> 的完整地址访问</strong>，勿自行拼接地址（见 §3.2）；</li>
+<li><strong>安装或卸载插件后须重启 <code>dsh web</code></strong>，仅刷新浏览器不起作用；</li>
+<li><strong>插件安装后须以命令验证其已加载</strong>，不能仅以安装无报错为准（见 §5.5）；</li>
+<li><strong>安装插件须锁定版本</strong>：npm 包指定精确版本号，GitHub 包附 <code>#</code> 加 commit 哈希。软件处于 0.1.x 预览阶段，版本间兼容性无法保证。</li>
+</ol>
+</section><section id="sec-1" class="sec reveal">
 <div class="sec-head">
 <span class="sec-num">SECTION 01</span>
-<h2>1. 两种用法</h2>
-<p class="desc">同一套场景卡与参数表单，两种打开方式；参数定义遵循同一份结构化约定。</p></div>
-<div class="cmp">
-<div class="col pick">
-<p class="c-name">装进 dsh · 插件<span class="badge">npm @lycheelink/dsh-workbench</span></p>
-<div class="kv"><span class="k">形态</span><span class="v">DSH Web插件（peer <code>cordis ^4.0.1</code>）</span></div><div class="kv"><span class="k">入口</span><span class="v">侧栏「工作台」场景卡网格</span></div><div class="kv"><span class="k">产出</span><span class="v">真实宿主会话 + 注入组装提示词</span></div>
-<p>场景卡成为宿主内的表单层：点卡建会话、注入提示词，「控制房」整页跟踪会话状态。插件为纯增量注入——不替换、不禁用任何官方插件。</p>
-</div>
-<div class="col">
-<p class="c-name">独立工具 · 生成提示词<span class="badge">零安装 · 离线可用</span></p>
-<div class="kv"><span class="k">形态</span><span class="v">单文件 HTML 采集台</span></div><div class="kv"><span class="k">输入</span><span class="v">表单 + 实时校验（必填完成度计）</span></div><div class="kv"><span class="k">产出</span><span class="v">结构化 JSON / 触发指令</span></div>
-<p>不想装任何东西时直接用采集台：填齐部署拓扑、业务建模与寻优目标，把实时生成的 JSON（或触发指令）复制给 dsh-TUI 触发 SKILL 执行。</p>
-</div>
-<div class="col">
-<p class="c-name">接收端 · dsh-TUI + SKILL<span class="badge">提示词消费方</span></p>
-<div class="kv"><span class="k">宿主</span><span class="v">dsh-TUI（社区 TUI 插件）</span></div><div class="kv"><span class="k">技能</span><span class="v">model-oob-perf-optimize 等</span></div><div class="kv"><span class="k">文档</span><span class="v"><a href="dsh-tui-quick-start.html" target="_blank" rel="noopener">dsh-TUI Quick Start</a></span></div>
-<p>采集台的 JSON 配一句触发词就是完整任务指令；粘贴进 dsh-TUI 即可运行。</p>
-</div>
-</div><div class="note">
-<p><strong>想先试插件？</strong>在 dsh web 侧执行 <code>dsh plugin --profile web add @lycheelink/dsh-workbench</code>；不装任何东西、只想看交互，先开<a href="workbench.html" target="_blank" rel="noopener">Agent 工作台</a>。</p>
+<h2>1. 安装前准备</h2>
+<p class="desc">装前三件事自查：Node 版本、网络、git。</p></div>
+<h3 id="sec-1-1"><span class="h3-tag">1.1</span>Node.js 版本</h3><div class="table-wrap">
+<table>
+<thead><tr><th>Node 版本</th><th>能不能用</th></tr></thead>
+<tbody><tr><td>22.19.0 及以上（22.x）</td><td>可用（推荐）</td></tr><tr><td>24.0.0 及以上</td><td>可用</td></tr><tr><td>22.0 ~ 22.18</td><td>不可用：版本过低，无法安装或运行</td></tr><tr><td>23.x（任何小版本）</td><td>不可用：不支持</td></tr></tbody>
+</table>
+</div><p>版本检查：</p><div class="code-block">
+<div class="code-head"><span class="dots"><i></i><i></i><i></i></span><span class="lang">sh</span></div>
+<pre><code>node -v     # 需 v22.19+ 或 v24+
+npm -v</code></pre>
+</div><p>版本不符请先升级 Node（建议使用 nvm 或官方安装包）。</p><h3 id="sec-1-2"><span class="h3-tag">1.2</span>网络要求</h3><p>安装过程需联网访问 npm 与 GitHub。建议预先配置 npm 镜像源，否则可能因网络延迟导致安装缓慢或超时。</p><h3 id="sec-1-3"><span class="h3-tag">1.3</span>安装前检查清单</h3><div class="note ok">
+<p><strong>装前自检三项</strong>：<code>node -v</code> 输出 v22.19+ 或 v24+；能访问 npm（可 <code>npm ping</code> 测试）；已安装 git（部分插件从 GitHub 安装时需要）。</p>
 </div>
 </section><section id="sec-2" class="sec reveal">
 <div class="sec-head">
 <span class="sec-num">SECTION 02</span>
-<h2>2. 工具与文档</h2>
-<p class="desc">六个入口：三个参数采集台、一个Agent 工作台、两份 quick-start 手册。</p></div>
-<div class="grid2">
-<div class="tile"><span class="t-k"><a href="perf-optimize-params.html" target="_blank" rel="noopener">寻优参数采集台</a></span><p class="t-d">部署拓扑、业务建模、寻优需求一次采齐，输出可直接提交 model-oob-perf-optimize SKILL 的寻优 JSON。</p></div><div class="tile"><span class="t-k"><a href="profiling-collect-params.html" target="_blank" rel="noopener">Profiling 参数采集台</a></span><p class="t-d">ascend-profiler 场景的参数采集台，生成结构化 Profiling 配置 JSON。</p></div><div class="tile"><span class="t-k"><a href="veriflow-params.html" target="_blank" rel="noopener">验证流测试台</a></span><p class="t-d">veriflow 验证流测试的参数采集台，输出对应结构化 JSON 与触发指令。</p></div><div class="tile"><span class="t-k"><a href="workbench.html" target="_blank" rel="noopener">企业 Agent 工作台</a></span><p class="t-d">插件的场景卡网格与参数表单的免安装预览版；卡数据可经 URL 参数或导入注入。</p></div><div class="tile"><span class="t-k"><a href="dsh-tui-quick-start.html" target="_blank" rel="noopener">dsh-TUI Quick Start</a></span><p class="t-d">社区 TUI 插件上手六环节：安装、装技能、启动、配置、授权、寻优参数配置。</p></div><div class="tile"><span class="t-k"><a href="dsh-quick-start.html" target="_blank" rel="noopener">DSH Quick Start</a></span><p class="t-d">宿主本体（dsh web）：版本要求、插件与技能管理、排错与备份，基于 0.1.2-rc.1 实测。</p></div>
+<h2>2. 安装 DSH</h2>
+<p class="desc">两种路径：全局锁定版本（推荐），或 npx 临时体验。</p></div>
+<h3 id="sec-2-1"><span class="h3-tag">2.1</span>全局安装（推荐）</h3><div class="note warn">
+<p><strong>安装时务必携带版本号。</strong>DSH 目前处于快速迭代期，新版本不稳定且可能与插件互不兼容；不带版本号会安装到最新的版本，容易遇到问题。<strong>请统一安装 <code>0.1.2-rc.1</code></strong>，本文所有内容均基于该版本验证。</p>
+</div><div class="code-block">
+<div class="code-head"><span class="dots"><i></i><i></i><i></i></span><span class="lang">sh</span></div>
+<pre><code>npm install -g @deepseek-ai/dsh@0.1.2-rc.1</code></pre>
+</div><p>安装成功时，终端末尾输出类似 <code>added 523 packages in 7m</code>。首次安装约需数分钟，耗时较长属正常现象，期间请勿中断。</p><p>安装完成后请核对版本号，确认实际安装版本为 <code>0.1.2-rc.1</code>：</p><div class="code-block">
+<div class="code-head"><span class="dots"><i></i><i></i><i></i></span><span class="lang">sh</span></div>
+<pre><code>dsh --version
+# 预期输出：0.1.2-rc.1
+# 若版本不符，说明未锁定，请重新执行安装命令</code></pre>
+</div><div class="note">
+<p><strong><code>dsh: command not found</code>？</strong>检查 npm 全局目录是否已加入 PATH（可通过 <code>npm bin -g</code> 查看）；Windows 用户请重新打开终端后重试。</p>
+</div><h3 id="sec-2-2"><span class="h3-tag">2.2</span>临时体验（不想装进系统）</h3><div class="code-block">
+<div class="code-head"><span class="dots"><i></i><i></i><i></i></span><span class="lang">sh</span></div>
+<pre><code>npx @deepseek-ai/dsh@0.1.2-rc.1 web</code></pre>
+</div><p>该方式按需下载，不写入全局环境，仅适合临时试用：每次执行均需联网解析，且后续插件安装命令较长。如需长期使用，建议采用 §2.1 的全局安装方式（同样须指定版本号）。</p><h3 id="sec-2-3"><span class="h3-tag">2.3</span>卸载</h3><div class="code-block">
+<div class="code-head"><span class="dots"><i></i><i></i><i></i></span><span class="lang">sh</span></div>
+<pre><code>npm uninstall -g @deepseek-ai/dsh</code></pre>
+</div><div class="note">
+<p>卸载不会删除用户数据（<code>~/.dsh</code> 目录，含配置、API Key 与会话记录）。如需彻底清除，见 §10。</p>
 </div>
 </section><section id="sec-3" class="sec reveal">
 <div class="sec-head">
 <span class="sec-num">SECTION 03</span>
-<h2>3. 站点地图</h2>
-<p class="desc">本站全部页面一览；均为相对链接，子页可直接收藏。</p></div>
+<h2>3. 启动与首次使用</h2>
+<p class="desc">启动后只有一件事不能错：<strong>用带 token 的完整地址访问</strong>。</p></div>
+<h3 id="sec-3-1"><span class="h3-tag">3.1</span>启动</h3><div class="code-block">
+<div class="code-head"><span class="dots"><i></i><i></i><i></i></span><span class="lang">sh</span></div>
+<pre><code>cd ~/your-project      # 该目录即默认工作区
+dsh web                # 默认地址 http://127.0.0.1:3080，并自动打开浏览器</code></pre>
+</div><p>常用参数：</p><div class="table-wrap">
+<table>
+<thead><tr><th>场景</th><th>命令</th></tr></thead>
+<tbody><tr><td>换端口（3080 被占用时）</td><td><code>dsh web --port 3081</code></td></tr><tr><td>让系统自动挑空闲端口</td><td><code>dsh web --port 0</code></td></tr><tr><td>不要自动弹浏览器（SSH 远程时）</td><td><code>dsh web --no-open</code></td></tr></tbody>
+</table>
+</div><div class="note">
+<p>默认情况下，服务仅监听本机回环地址（127.0.0.1），同一局域网内的其他设备无法访问。此为默认的安全策略。</p>
+</div><h3 id="sec-3-2"><span class="h3-tag">3.2</span>必须使用启动日志输出的地址访问</h3><p>启动后，终端会打印类似如下一行：</p><div class="code-block">
+<div class="code-head"><span class="dots"><i></i><i></i><i></i></span><span class="lang">text</span></div>
+<pre><code>dsh web: http://127.0.0.1:3080/?token=EXE40B9n8zI6Aq4QwWsvwyXlrCYzsuUaxSySblgtLHY</code></pre>
+</div><p><strong>请复制该完整地址在浏览器中打开。</strong> 若直接输入 <code>http://127.0.0.1:3080</code>，将返回 <code>401 — dsh web authentication required; reopen the URL printed by dsh web.</code>。要点：</p><ul>
+<li>该 token 在首次访问时兑换为浏览器 Cookie，有效期 30 天；</li>
+<li>Cookie 与「地址 + 端口」绑定。若更换端口或使用其他域名/IP 访问，将再次返回 401，此时重新复制启动日志中的地址即可；</li>
+<li>每次重启 <code>dsh web</code> 都会签发新的 token，原有地址随之失效；</li>
+<li>使用 <code>--no-open</code> 时不会自动打开浏览器，需手动复制地址。</li>
+</ul><h3 id="sec-3-3"><span class="h3-tag">3.3</span>首次使用的三步配置</h3><ol>
+<li><strong>内测声明</strong>：首次打开会弹出内测声明，点击「继续」即可；</li>
+<li><strong>填 API Key</strong>：于 <code>Settings → Models</code> 的 DeepSeek 卡片中填入 Key（前往 platform.deepseek.com 创建），保存后立即生效，无需重启；</li>
+<li><strong>选工作区</strong>：在首页 <code>Choose workspace</code> 中选定一个目录，方可开始对话。</li>
+</ol><div class="note warn">
+<p>API Key 以明文形式保存于 <code>~/.dsh/.credentials.yaml</code>。设置页不回显原文，仅显示引用占位。请勿将该文件提交至版本库。</p>
+</div><p>如需使用其他模型服务，可在 <code>Settings → Models</code> 中添加自定义提供方，支持任意 OpenAI 兼容接口。</p>
+</section><section id="sec-4" class="sec reveal">
+<div class="sec-head">
+<span class="sec-num">SECTION 04</span>
+<h2>4. 日常使用</h2>
+<p class="desc">工作区、数据落点与重启时机——日常使用的三块常识。</p></div>
+<h3 id="sec-4-1"><span class="h3-tag">4.1</span>工作区</h3><ul>
+<li>启动时的当前目录即为默认工作区，亦可在界面中随时切换；</li>
+<li>切换项目时，建议在对应目录下启动 <code>dsh web</code>。</li>
+</ul><h3 id="sec-4-2"><span class="h3-tag">4.2</span>数据都存在哪</h3><div class="table-wrap">
+<table>
+<thead><tr><th>路径</th><th>内容</th></tr></thead>
+<tbody><tr><td><code>~/.dsh/.credentials.yaml</code></td><td>模型 API Key</td></tr><tr><td><code>~/.dsh/settings.yaml</code></td><td>全局设置（含内测声明确认状态等）</td></tr><tr><td><code>~/.dsh/profiles/web/</code></td><td>Web 版的配置、插件、会话记录</td></tr></tbody>
+</table>
+</div><p>可通过设置 <code>DSH_HOME</code> 环境变量，将整个数据目录迁移至其他路径：</p><div class="code-block">
+<div class="code-head"><span class="dots"><i></i><i></i><i></i></span><span class="lang">sh</span></div>
+<pre><code>export DSH_HOME=/path/to/your/dsh-home</code></pre>
+</div><h3 id="sec-4-3"><span class="h3-tag">4.3</span>关闭与重启</h3><ul>
+<li><strong>关闭</strong>：在运行 <code>dsh web</code> 的终端中按 <code>Ctrl + C</code>；</li>
+<li><strong>重启</strong>：安装或卸载插件后必须重启方可生效（仅刷新浏览器无效）。</li>
+</ul>
+</section><section id="sec-5" class="sec reveal">
+<div class="sec-head">
+<span class="sec-num">SECTION 05</span>
+<h2>5. 安装插件</h2>
+<p class="desc">安装规则、常用命令、已实测清单与生效验证。</p></div>
+<h3 id="sec-5-1"><span class="h3-tag">5.1</span>安装规则</h3><ol>
+<li><strong>锁定版本</strong>：npm 包指定精确版本（如 <code>dsh-at-file@0.6.3</code>），GitHub 包附 commit 哈希；</li>
+<li><strong>安装完成后须重启 <code>dsh web</code></strong>；</li>
+<li><strong>安装后须验证</strong>（§5.5）。命令执行无报错并不等同于插件已生效。</li>
+</ol><h3 id="sec-5-2"><span class="h3-tag">5.2</span>常用命令</h3><div class="table-wrap">
+<table>
+<thead><tr><th>操作</th><th>命令</th></tr></thead>
+<tbody><tr><td>装插件（npm）</td><td><code>dsh plugin --profile web add dsh-at-file@0.6.3</code></td></tr><tr><td>装插件（GitHub）</td><td><code>dsh plugin --profile web add "github:omdsh-dev/dsh-paste-input#cc02be15"</code></td></tr><tr><td>卸插件</td><td><code>dsh plugin --profile web remove dsh-at-file</code></td></tr><tr><td>升插件</td><td><code>dsh plugin --profile web update dsh-at-file</code></td></tr><tr><td>看装了哪些</td><td><code>dsh plugin --profile web list</code></td></tr><tr><td><strong>验证是否生效</strong></td><td><code>dsh --profile web --dump-config | grep 插件名</code></td></tr></tbody>
+</table>
+</div><div class="note">
+<p><code>--profile web</code> 须置于 <code>plugin</code> 之后、<code>add</code> 之前，位置错误会报 <code>unknown option</code>。安装失败具有原子性，失败时不会破坏已有配置，可直接重试。</p>
+</div><h3 id="sec-5-3"><span class="h3-tag">5.3</span>推荐插件</h3><div class="note">
+<p>版本基线：宿主 <code>0.1.2-rc.1</code>，下表版本均于 2026-09-10 实测可用；表中 <code>...</code> 为 <code>dsh plugin --profile web</code> 的缩写。</p>
+</div><h4>推荐安装（低风险）</h4><div class="table-wrap">
+<table>
+<thead><tr><th>插件</th><th>功能描述</th><th>安装命令</th></tr></thead>
+<tbody><tr><td><code>dsh-plugin-check</code></td><td>插件体检，装新插件前先查一遍，避免把 DSH 搞崩</td><td><code>... add dsh-plugin-check@0.1.0</code></td></tr><tr><td><code>dsh-at-file</code></td><td>输入框打 <code>@</code> 搜索并引用工作区文件</td><td><code>... add dsh-at-file@0.6.3</code></td></tr><tr><td><code>dsh-paste-input</code></td><td>Ctrl+V 粘贴 / 拖拽文件作为附件</td><td><code>... add "github:omdsh-dev/dsh-paste-input#cc02be15"</code></td></tr><tr><td><code>dsh-session-health</code></td><td>会话健康检查，防止历史记录损坏丢失</td><td><code>... add dsh-session-health@0.6.0</code></td></tr></tbody>
+</table>
+</div><div class="note">
+<p>0.1.2 宿主已内置 <code>@</code> 引用能力且较为完善，安装 <code>dsh-at-file</code> 前可先评估原生功能是否满足需求。</p>
+</div><h4>按需安装</h4><div class="table-wrap">
+<table>
+<thead><tr><th>插件</th><th>功能描述</th><th>安装命令</th><th>注意事项</th></tr></thead>
+<tbody><tr><td><code>dsh-knowledge-base</code></td><td>知识库：导入文档、目录管理、全文检索</td><td><code>... add dsh-knowledge-base@0.1.5</code></td><td>—</td></tr><tr><td><code>dsh-better-sidebar</code></td><td>VSCode 风格侧边栏（文件树/终端/Git）</td><td><code>... add dsh-better-sidebar@0.18.1</code></td><td>勿装 0.17.x（会崩）；含原生模块，可能被拦截，见 §8.1</td></tr><tr><td><code>dsh-genui</code></td><td>回复里渲染图表/表格/表单</td><td><code>... add dsh-genui@0.2.1</code></td><td>依赖 GitHub，网络不稳会超时</td></tr><tr><td><code>dsh-office</code></td><td>读写 Office 文档（docx/pdf/pptx）</td><td><code>... add dsh-office@0.4.2</code></td><td>—</td></tr><tr><td><code>dsh-message-edit</code></td><td>编辑已发送的消息并重新生成</td><td><code>... add dsh-message-edit@0.2.3</code></td><td>—</td></tr><tr><td><code>dsh-skill-manager</code></td><td>设置页管理已加载的技能（含 ZIP 装技能）</td><td><code>... add "git+https://github.com/lycheelink/dsh-skill-manager.git#f3703dc"</code></td><td>npm 上的同名包是另一套旧实现，勿用 npm 版；<strong>装技能的用法见 §6</strong></td></tr></tbody>
+</table>
+</div><h4>运维类</h4><div class="table-wrap">
+<table>
+<thead><tr><th>插件</th><th>功能描述</th><th>注意事项</th></tr></thead>
+<tbody><tr><td><code>dsh-ssh-ops</code></td><td>SSH 运维：终端、SFTP、数据库面板、多机批量执行</td><td>凭据<strong>明文</strong>存于 <code>~/.dsh/.credentials.yaml</code>；主机指纹默认「首次连接即信任」，生产服务器建议改严格模式</td></tr><tr><td><code>deepseek-harness-auth</code></td><td>加一层密码认证</td><td><strong>仅当需将 DSH 暴露至局域网/公网时才需要</strong>（本机用不上，宿主自带 token 认证）。npm 版在 0.1.2 上有问题，需用 fork 版</td></tr></tbody>
+</table>
+</div><div class="note warn">
+<p><strong>避免重复安装</strong>：<code>@</code> 文件引用、MCP 客户端等能力已由宿主内置，重复安装将引发冲突。</p>
+</div><h3 id="sec-5-4"><span class="h3-tag">5.4</span>批量安装</h3><p>可将待安装插件写入清单文件 <code>~/dsh-plugins.list</code>（以 <code>#</code> 开头的行视为注释）：</p><div class="code-block">
+<div class="code-head"><span class="dots"><i></i><i></i><i></i></span><span class="lang">text</span></div>
+<pre><code>dsh-plugin-check@0.1.0
+dsh-at-file@0.6.3
+dsh-session-health@0.6.0
+dsh-knowledge-base@0.1.5
+github:omdsh-dev/dsh-paste-input#cc02be15</code></pre>
+</div><p>使用以下命令批量安装：</p><div class="code-block">
+<div class="code-head"><span class="dots"><i></i><i></i><i></i></span><span class="lang">sh</span></div>
+<pre><code>while read -r p; do
+  [ -z "$p" ] &amp;&amp; continue
+  case "$p" in \#*) continue;; esac
+  echo "→ $p"
+  dsh plugin --profile web add "$p" &lt;/dev/null
+done &lt; ~/dsh-plugins.list</code></pre>
+</div><div class="note danger">
+<p>末尾的 <code>&lt;/dev/null</code> 不可省略。否则部分插件的安装脚本会读取标准输入，吞掉清单中后续行，导致静默漏装。</p>
+</div><p>全部安装完成后，统一重启一次 <code>dsh web</code>，再按 §5.5 验证。</p><h3 id="sec-5-5"><span class="h3-tag">5.5</span>验证插件真的生效</h3><p>建议通过以下三个层面逐级验证：</p><div class="code-block">
+<div class="code-head"><span class="dots"><i></i><i></i><i></i></span><span class="lang">sh</span></div>
+<pre><code># 1) 依赖层：包是否进入依赖清单
+cat ~/.dsh/profiles/web/package.json
+
+# 2) 装配层（最关键）：是否进入最终加载树
+dsh --profile web --dump-config | grep -n "dsh-knowledge-base"
+
+# 3) 功能层：于 Web UI 中人工确认
+#    知识库 → 侧边栏出现入口；@ 文件 → 输入框可检索到文件；粘贴 → Ctrl+V 可贴入图片</code></pre>
+</div><div class="table-wrap">
+<table>
+<thead><tr><th>现象</th><th>原因</th><th>处理方式</th></tr></thead>
+<tbody><tr><td>命令执行无报错，但界面无变化</td><td>未重启 <code>dsh web</code></td><td>重启</td></tr><tr><td><code>--dump-config</code> 中检索不到</td><td>该包仅为普通依赖而非可加载插件</td><td>以界面实际表现判断（部分插件本就不出现在加载树中）</td></tr><tr><td>安装后 DSH 无法启动</td><td>插件与当前版本不兼容</td><td>执行 <code>dsh plugin --profile web remove &lt;刚安装的包&gt;</code>，切勿删除 <code>~/.dsh</code></td></tr><tr><td>报 <code>unknown option</code></td><td><code>--profile</code> 位置错误</td><td>见 §5.2 注意事项</td></tr></tbody>
+</table>
+</div>
+</section><section id="sec-6" class="sec reveal">
+<div class="sec-head">
+<span class="sec-num">SECTION 06</span>
+<h2>6. 安装技能（Skill）</h2>
+</div>
+<div class="note">
+<p><strong>插件与技能是两个不同的概念</strong>：插件为 DSH 扩展功能（通过命令行 <code>dsh plugin</code> 管理），技能则是提供给模型的任务操作指引（于设置页「技能管理」面板管理）。本节以 GitCode 上的 <code>model-oob-perf-optimize</code> 为例。</p>
+</div><h3 id="sec-6-1"><span class="h3-tag">6.1</span>前置：装好技能管理器</h3><div class="code-block">
+<div class="code-head"><span class="dots"><i></i><i></i><i></i></span><span class="lang">sh</span></div>
+<pre><code>dsh plugin --profile web add "github:lycheelink/dsh-skill-manager.git#f3703dca136bab14032dd5e1ae7d5754bbef7e1a"</code></pre>
+</div><p>安装完成后须重启 <code>dsh web</code>（所有插件均须重启，见 §5.1）。重启后进入 <strong>设置 → 技能管理</strong>，即可查看当前已加载的技能列表。</p><h3 id="sec-6-2"><span class="h3-tag">6.2</span>准备技能 ZIP</h3><p>技能仓库大多托管于 GitHub 之外的平台，而插件内置的「GitHub 技能市场」仅支持 <code>github.com</code> 源，因此安装 GitCode 上的技能须采用 ZIP 方式。</p><p>GitCode 网页支持将技能目录直接导出为 ZIP，无需手动打包：</p><ol>
+<li>浏览器打开技能目录页，例如 <code>https://gitcode.com/Ascend-SACT/ling/tree/main/skills/model-oob-perf-optimize/</code>；</li>
+<li>点击右上角的「下载当前目录」按钮（位于「下载 zip」左侧）；</li>
+<li>下载得到 <code>ling-main-skills-model-oob-perf-optimize.zip</code>，无需解压或修改目录结构即可用于安装（经实测无需登录，匿名亦可下载）。</li>
+</ol><p>该压缩包解压后的目录结构如下（外层额外嵌套两级路径，不影响安装）：</p><div class="code-block">
+<div class="code-head"><span class="dots"><i></i><i></i><i></i></span><span class="lang">text</span></div>
+<pre><code>ling-main-skills-model-oob-perf-optimize/     ← GitCode 自动加的外层：仓库-分支-路径
+└── skills/
+    └── model-oob-perf-optimize/              ← 插件就装这一层
+        ├── SKILL.md                          ← 技能入口，缺了它装不上
+        ├── README.md
+        ├── asset/  design/  references/
+        ├── scripts/  sdd/  system_validation/
+        └── test/</code></pre>
+</div><p><strong>为何此结构可被正确识别</strong>：插件以「包含 <code>SKILL.md</code> 的目录」作为技能根目录进行定位，外层嵌套层级无关紧要，技能名称取该目录名。经实测，将 GitCode 下载的原包直接导入后，技能名正确解析为 <code>model-oob-perf-optimize</code>，897 个文件完整落盘，<code>asset</code>、<code>design</code>、<code>references</code>、<code>scripts</code>、<code>sdd</code>、<code>system_validation</code>、<code>test</code> 等子目录均完整保留。</p><div class="note warn">
+<p>目录地址末尾须包含斜杠（<code>/</code>）。<code>.../model-oob-perf-optimize</code> 不带 <code>/</code> 时会被站点跳转到「文件预览」页，该页面<strong>无下载按钮</strong>；补为 <code>.../model-oob-perf-optimize/</code> 后才会停留在目录页，右上角两个按钮方才显示。</p>
+</div><div class="note warn">
+<p>务必进入目标技能目录后再点击该按钮。该按钮下载的是「当前所在目录」：若在仓库根目录或 <code>skills/</code> 层级点击，ZIP 中将包含该层级下的全部技能（实测：包内含两个技能时，安装将一次性导入两个）。</p>
+</div><div class="note">
+<p>ZIP 体积上限为 64 MiB。技能的子目录不可省略：<code>SKILL.md</code> 中以相对路径引用了 <code>./references/...</code>、<code>./scripts/...</code> 等资源，缺失将导致技能无法运行。使用「下载当前目录」可自动包含全部子目录。</p>
+</div><h4>备选方案：页面未提供下载按钮时</h4><p>部分页面可能不提供该按钮，此时可通过命令行获取（以 <code>ling</code> 仓库为例）：</p><div class="code-block">
+<div class="code-head"><span class="dots"><i></i><i></i><i></i></span><span class="lang">sh</span></div>
+<pre><code># 浅克隆并稀疏检出，仅获取该技能目录
+git clone --depth 1 --filter=blob:none --sparse https://gitcode.com/Ascend-SACT/ling.git
+cd ling
+git sparse-checkout set skills/model-oob-perf-optimize
+
+# 进入 skills/ 打包，确保 ZIP 根目录下即为技能目录
+cd skills &amp;&amp; zip -r model-oob-perf-optimize.zip model-oob-perf-optimize</code></pre>
+</div><p>Windows 环境请使用以下命令替代：</p><div class="code-block">
+<div class="code-head"><span class="dots"><i></i><i></i><i></i></span><span class="lang">powershell</span></div>
+<pre><code>Compress-Archive -Path model-oob-perf-optimize -DestinationPath model-oob-perf-optimize.zip</code></pre>
+</div><h3 id="sec-6-3"><span class="h3-tag">6.3</span>在页面里安装</h3><ol>
+<li>于 DSH 页面进入 <strong>设置 → 技能管理</strong>；</li>
+<li>在 <strong>ZIP 安装</strong> 区块点击「选择 ZIP 文件…」；</li>
+<li>选中刚下载的 <code>ling-main-skills-model-oob-perf-optimize.zip</code>，等待按钮状态变为「已安装」；</li>
+<li>列表中随即出现 <strong>model-oob-perf-optimize</strong>，状态为「已启用」。</li>
+</ol><p>技能文件保存于 <code>~/.dsh/skills/model-oob-perf-optimize/</code>，DSH 会自动识别，无需重启（仅插件需要重启）。</p><h3 id="sec-6-4"><span class="h3-tag">6.4</span>日常管理</h3><div class="table-wrap">
+<table>
+<thead><tr><th>操作描述</th><th>操作方法</th></tr></thead>
+<tbody><tr><td>确认已安装</td><td>「技能管理」列表中可见该技能且状态为「已启用」</td></tr><tr><td>临时停用</td><td>于列表中点击「停用」，实质为将 <code>SKILL.md</code> 重命名，内容不会丢失</td></tr><tr><td>重新启用</td><td>点击「启用」</td></tr><tr><td>查看技能全文</td><td>点击列表中的卡片展开</td></tr><tr><td>卸载</td><td>删除 <code>~/.dsh/skills/model-oob-perf-optimize/</code> 目录</td></tr></tbody>
+</table>
+</div><div class="note">
+<p>列表中亦会显示 <code>~/.codex/skills</code>、<code>~/.claude/skills</code> 下的技能（若曾安装 Codex / Claude）。它们默认处于停用状态，不影响 DSH 使用。</p>
+</div><h3 id="sec-6-5"><span class="h3-tag">6.5</span>注意事项</h3><ul>
+<li><strong>重复安装不会覆盖</strong>：同名技能已存在时，安装将被跳过并提示冲突，内容不会更新。如需升级，须先删除 <code>~/.dsh/skills/&lt;技能名&gt;/</code>，再重新安装。</li>
+<li><strong>GitHub 技能市场不支持 GitCode 源</strong>：该功能仅按 <code>github.com</code> 地址拉取，填入 GitCode 仓库坐标将无法检索到内容。来自 GitCode / Gitee 等平台的技能一律采用上述 ZIP 方式安装。</li>
+</ul>
+</section><section id="sec-7" class="sec reveal">
+<div class="sec-head">
+<span class="sec-num">SECTION 07</span>
+<h2>7. 可选：连接外部 MCP 工具</h2>
+<p class="desc">如需接入外部 MCP 服务器，编辑 <code>~/.dsh/profiles/web/cordis.patch.yml</code>，追加如下内容：</p></div>
+<div class="code-block">
+<div class="code-head"><span class="dots"><i></i><i></i><i></i></span><span class="lang">yaml</span></div>
+<pre><code>- insert:
+    - id: mcp-eval-suite
+      name: '@deepseek-ai/dsh-mcp-client'
+      config:
+        serverName: eval-suite
+        transport: streamable-http
+        url: http://127.0.0.1:8900/mcp
+        failOnStartupError: false</code></pre>
+</div><ul>
+<li>新条目须以 <code>insert:</code> 包裹，否则会报 <code>patch: entry not found</code>；</li>
+<li>修改后重启 <code>dsh web</code>；</li>
+<li>接入后工具名称形如 <code>mcp__&lt;server&gt;__&lt;tool&gt;</code>。</li>
+</ul><div class="note warn">
+<p>该文件支持内嵌 JS 表达式，等价于可执行代码，请勿授予他人写权限；敏感信息（如密码）建议使用环境变量引用，避免硬编码。</p>
+</div>
+</section><section id="sec-8" class="sec reveal">
+<div class="sec-head">
+<span class="sec-num">SECTION 08</span>
+<h2>8. 常见问题排查</h2>
+<p class="desc">按现象查表；表内条目均来自实测或已知 issue。</p></div>
 <div class="table-wrap">
 <table>
-<thead><tr><th>页面</th><th>类型</th><th>内容</th></tr></thead>
-<tbody><tr><td><a href="index.html" target="_blank" rel="noopener">index.html</a></td><td>首页</td><td>定位说明、两种用法、工具与文档入口</td></tr><tr><td><a href="dsh-quick-start.html" target="_blank" rel="noopener">dsh-quick-start.html</a></td><td>文档</td><td>DSH Quick Start（锁版本 0.1.2-rc.1）</td></tr><tr><td><a href="dsh-tui-quick-start.html" target="_blank" rel="noopener">dsh-tui-quick-start.html</a></td><td>文档</td><td>dsh-TUI 社区插件上手指南</td></tr><tr><td><a href="perf-optimize-params.html" target="_blank" rel="noopener">perf-optimize-params.html</a></td><td>工具</td><td>寻优参数采集台（model-oob-perf-optimize）</td></tr><tr><td><a href="profiling-collect-params.html" target="_blank" rel="noopener">profiling-collect-params.html</a></td><td>工具</td><td>Profiling 参数采集台（ascend-profiler）</td></tr><tr><td><a href="veriflow-params.html" target="_blank" rel="noopener">veriflow-params.html</a></td><td>工具</td><td>验证流测试台（veriflow）</td></tr><tr><td><a href="workbench.html" target="_blank" rel="noopener">workbench.html</a></td><td>预览</td><td>企业 Agent 工作台（插件预览版）</td></tr></tbody>
+<thead><tr><th>现象</th><th>原因</th><th>处理方式</th></tr></thead>
+<tbody><tr><td>安装失败，提示 Node 版本不符</td><td>Node 版本低于 22.19 或为 23.x</td><td>升级 Node</td></tr><tr><td><code>dsh: command not found</code></td><td>全局命令目录未加入 PATH</td><td>通过 <code>npm bin -g</code> 查看并加入 PATH；Windows 用户重开终端</td></tr><tr><td>浏览器返回 <strong>401</strong></td><td>未使用带 token 的地址，或更换过端口/域名</td><td>复制终端打印的 <code>dsh web: http://.../?token=...</code> 重新打开</td></tr><tr><td>端口 3080 被占用</td><td>已有实例或其他进程占用</td><td><code>dsh web --port 3081</code>，或 <code>--port 0</code> 由系统分配</td></tr><tr><td>安装插件后 DSH 无法启动</td><td>插件与当前版本不兼容</td><td><code>remove</code> 掉刚安装的包再启动，<strong>切勿删除 <code>~/.dsh</code></strong></td></tr><tr><td>安装含原生模块的插件报 <code>ERR_PNPM_IGNORED_BUILDS</code></td><td>包管理器默认拦截构建脚本</td><td>见 §8.1</td></tr><tr><td>从 GitHub 源安装时超时</td><td>网络不稳定</td><td>可多次重试，或改用 <code>git+https://</code> 形式地址</td></tr><tr><td>点击内测声明「继续」后报 <strong>「暂时无法保存确认状态，请重试。」</strong></td><td>写入成功与否需核实</td><td>见 §8.2</td></tr><tr><td>安装插件时报 <code>EEXIST: symlink</code> 或文件被拒绝</td><td>在受管控的终端环境中执行（如部分 AI 工具内置的 shell）</td><td>请改用系统自带的标准终端执行。此为执行环境限制，并非 DSH 缺陷</td></tr><tr><td>设置页提示「设置不可用」</td><td>仅可通过 localhost/127.0.0.1 访问以读写设置</td><td>改用 <code>http://127.0.0.1:3080</code> 访问</td></tr><tr><td>局域网内其他设备无法打开 / 报 Web Crypto 错误</td><td>明文 HTTP 不满足安全上下文要求</td><td>须配置 HTTPS，或通过 SSH 隧道将端口映射至本机</td></tr></tbody>
 </table>
+</div><h3 id="sec-8-1"><span class="h3-tag">8.1</span>原生模块被拦截（<code>ERR_PNPM_IGNORED_BUILDS</code>）</h3><p>安装含原生模块的插件（如 <code>dsh-better-sidebar</code>）时可能出现，处理方法如下：</p><div class="code-block">
+<div class="code-head"><span class="dots"><i></i><i></i><i></i></span><span class="lang">sh</span></div>
+<pre><code>cat &gt;&gt; ~/.dsh/profiles/web/pnpm-workspace.yaml &lt;&lt;'EOF'
+
+allowBuilds:
+  node-pty: true
+EOF
+
+# 随后重新执行安装命令
+dsh plugin --profile web add dsh-better-sidebar@0.18.1</code></pre>
+</div><div class="note warn">
+<p>放行构建即允许该插件以当前用户权限执行代码。请仅对可信插件放开，并锁定其版本。</p>
+</div><h3 id="sec-8-2"><span class="h3-tag">8.2</span>「暂时无法保存确认状态，请重试。」</h3><p>该报错出现在点击内测声明弹窗「继续」时（与 API Key 保存无关）。多数情况下状态已成功写入，刷新页面即可。按以下顺序排查：</p><div class="code-block">
+<div class="code-head"><span class="dots"><i></i><i></i><i></i></span><span class="lang">sh</span></div>
+<pre><code>cat ~/.dsh/settings.yaml</code></pre>
+</div><div class="table-wrap">
+<table>
+<thead><tr><th>现象</th><th>说明</th><th>处理方式</th></tr></thead>
+<tbody><tr><td>包含 <code>welcomeNoticeVersion</code></td><td>伪失败：写入成功但页面未同步</td><td><strong>刷新页面（F5）</strong></td></tr><tr><td>不包含</td><td>确未写入</td><td>检查 <code>~/.dsh</code> 目录权限与磁盘空间；并确认 <code>~/.dsh/settings.yaml.lock</code> 中记录的进程号是否仍在运行，若进程已退出可安全删除该 lock 文件</td></tr><tr><td>以上均无效</td><td>页面地址非回环地址</td><td>改用 <code>http://127.0.0.1:&lt;端口&gt;/?token=...</code> 访问</td></tr></tbody>
+</table>
+</div>
+</section><section id="sec-9" class="sec reveal">
+<div class="sec-head">
+<span class="sec-num">SECTION 09</span>
+<h2>9. 安全提醒与备份</h2>
+<p class="desc">默认配置按「本机单人使用」设计；要多人或跨网访问，先补齐认证与 HTTPS。</p></div>
+<ul>
+<li>服务仅监听 <code>127.0.0.1</code>，外部无法访问；</li>
+<li>访问需提供启动 token（§3.2）；</li>
+<li>但该 token 为单一共享值，无用户名/密码，亦无操作审计。</li>
+</ul><div class="note danger">
+<p><strong>若需多人访问或将服务暴露至局域网/公网，必须先安装认证插件（如 <code>deepseek-harness-auth</code>）并配置 HTTPS。</strong></p>
+</div><p><strong>需重点保护的文件</strong>：</p><div class="table-wrap">
+<table>
+<thead><tr><th>路径</th><th>说明</th></tr></thead>
+<tbody><tr><td><code>~/.dsh/.credentials.yaml</code></td><td>API Key 明文保存，权限应设为 600，切勿提交至版本库</td></tr><tr><td><code>~/.dsh/profiles/web/cordis.patch.yml</code></td><td>用户配置文件，支持内嵌 JS 表达式，切勿放开写权限</td></tr></tbody>
+</table>
+</div><p><strong>备份</strong>（<code>node_modules</code> 无需备份，重装即可恢复）：</p><div class="code-block">
+<div class="code-head"><span class="dots"><i></i><i></i><i></i></span><span class="lang">sh</span></div>
+<pre><code>tar czf ~/dsh-backup-$(date +%Y%m%d).tar.gz \
+  ~/.dsh/.credentials.yaml \
+  ~/.dsh/profiles/web/cordis.patch.yml \
+  ~/.dsh/profiles/web/package.json</code></pre>
+</div>
+</section><section id="sec-10" class="sec reveal">
+<div class="sec-head">
+<span class="sec-num">SECTION 10</span>
+<h2>10. 升级、重装与彻底删除</h2>
+<p class="desc">覆盖本体与插件的升级、修复与彻底卸载路径。</p></div>
+<div class="table-wrap">
+<table>
+<thead><tr><th>场景</th><th>操作</th></tr></thead>
+<tbody><tr><td>升级 DSH 本体</td><td>执行 <code>npm install -g @deepseek-ai/dsh@&lt;版本号&gt;</code>，随后逐一确认各插件在新版本上仍可正常工作</td></tr><tr><td>升级单个插件</td><td>执行 <code>dsh plugin --profile web update &lt;包名&gt;</code>，重启后按 §5.5 验证</td></tr><tr><td>升级后插件异常</td><td>移除该插件，重新安装原先锁定的旧版本</td></tr><tr><td>配置损坏无法修复时</td><td>先备份 <code>cordis.patch.yml</code> → 删除 <code>~/.dsh/profiles/web</code> 目录 → 重新启动将自动重建 → 重装插件</td></tr><tr><td>彻底卸载</td><td>执行 <code>npm uninstall -g @deepseek-ai/dsh &amp;&amp; rm -rf ~/.dsh</code>（将删除凭据、配置及全部会话记录，操作前请先备份）</td></tr></tbody>
+</table>
+</div><div class="note warn">
+<p><strong>升级守则：单次仅变更一个组件。</strong>先升级宿主并确认可用，再逐个升级插件，每升级一个验证一次。同时变更多个变量将导致问题难以定位。</p>
+</div>
+</section><section id="sec-11" class="sec reveal">
+<div class="sec-head">
+<span class="sec-num">SECTION 11</span>
+<h2>11. 附录：速查</h2>
+<p class="desc">命令与路径的浓缩版，供日常翻查。</p></div>
+<div class="table-wrap">
+<table>
+<thead><tr><th>项</th><th>值</th></tr></thead>
+<tbody><tr><td>npm 包名</td><td><code>@deepseek-ai/dsh</code></td></tr><tr><td>官方仓库</td><td><a href="https://github.com/deepseek-ai/deepseek-harness" target="_blank" rel="noopener">github.com/deepseek-ai/deepseek-harness</a></td></tr><tr><td>数据目录</td><td><code>~/.dsh</code>（Windows：<code>C:\Users\&lt;用户&gt;\.dsh</code>）</td></tr><tr><td>技能目录</td><td><code>~/.dsh/skills</code>（ZIP 安装的落点，见 §6）</td></tr><tr><td>默认访问地址</td><td><code>http://127.0.0.1:3080</code>（需带 token，见 §3.2）</td></tr><tr><td><strong>本文锁定版本</strong></td><td><strong><code>0.1.2-rc.1</code></strong> —— 安装时须显式指定，见 §2.1</td></tr><tr><td>站点头页</td><td><a href="index.html" target="_blank" rel="noopener">index.html</a> —— 插件说明与全部工具入口</td></tr><tr><td>姊妹篇</td><td><a href="dsh-tui-quick-start.html" target="_blank" rel="noopener">dsh-TUI Quick Start</a> —— 终端 TUI 版上手指南</td></tr></tbody>
+</table>
+</div><p><strong>命令速查</strong></p><div class="code-block">
+<div class="code-head"><span class="dots"><i></i><i></i><i></i></span><span class="lang">sh</span></div>
+<pre><code>dsh --version                                   # 查看版本
+dsh web                                         # 启动（默认 3080）
+dsh web --port 3081 --no-open                   # 换端口且不自动打开浏览器
+dsh plugin --profile web add &lt;包&gt;@&lt;版本&gt;          # 安装插件
+dsh plugin --profile web remove &lt;包&gt;             # 卸载插件
+dsh plugin --profile web list                    # 查看已安装插件
+dsh --profile web --dump-config                  # 查看最终加载内容</code></pre>
 </div>
 </section>
 
 <footer class="doc-footer">
 <div class="f-row">
-<span>来源：dsh-workbench 站点头页</span>
-<span>适用：@lycheelink/dsh-workbench 0.1.2 · DSH Web 插件 · 独立参数采集工具</span>
+<span>来源：DeepSeek Harness（DSH）安装使用手册 · v1.1</span>
+<span>适用：@deepseek-ai/dsh 0.1.2-rc.1 · dsh web</span>
 <span>更新：2026-09-23</span>
 </div>
-<p class="f-note">插件在 dsh web 宿主内运行，会话操作以宿主权限为准；采集工具为单文件 HTML，可下载离线使用，生成的 JSON 只在自行复制/下载后才会离开本机。</p>
+<p class="f-note">本文仅覆盖安装、使用与常见问题处理，不涉及插件开发与源码实现；全部结论基于 0.1.2-rc.1 实测验证。</p>
 </footer>
 
 </div>
