@@ -34,7 +34,9 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          # wrangler@latest 要求 Node >= 22（见 publish.sh 的 npx wrangler@latest）。
+          # 本 job 只发布静态 pages，不构建插件，故与 test.yml 的 node-20 无关。
+          node-version: 22
 
       - name: Pre-deploy self-check
         run: ./pages/publish.sh --check
