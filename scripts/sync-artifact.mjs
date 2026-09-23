@@ -12,7 +12,7 @@
  *
  * Since the 2026-09 migration, this repo is the single canonical source of
  * truth for the consoles (pages/cloudflare-pages/dist — the same files that
- * publish.sh deploys to https://dsh-tui.pages.dev). Edit them there, then run
+ * publish.sh deploys to https://dsh-workbench.pages.dev). Edit them there, then run
  * this copy step to refresh the esbuild text-loader imports consumed by
  * src/client/artifacts.js — the vendored copies are what the browser bundle
  * embeds via <iframe srcDoc>. Keep them in sync, never hand-edit both.

@@ -1,4 +1,4 @@
-# 发布 pages/cloudflare-pages/dist → Cloudflare Pages（dsh-tui，https://dsh-tui.pages.dev）
+# 发布 pages/cloudflare-pages/dist → Cloudflare Pages（dsh-workbench，https://dsh-workbench.pages.dev）
 #
 # 需要仓库 Secret（Settings → Secrets and variables → Actions）：
 #   CLOUDFLARE_API_TOKEN   权限 Account → Cloudflare Pages → Edit
@@ -40,6 +40,13 @@ jobs:
 
       - name: Pre-deploy self-check
         run: ./pages/publish.sh --check
+
+      - name: Ensure Pages project exists
+        if: ${{ env.CLOUDFLARE_API_TOKEN != '' && env.CLOUDFLARE_ACCOUNT_ID != '' }}
+        run: |
+          if ! npx --yes wrangler@latest pages project list | grep -q dsh-workbench; then
+            npx --yes wrangler@latest pages project create dsh-workbench --production-branch main
+          fi
 
       - name: Deploy to Cloudflare Pages
         if: ${{ env.CLOUDFLARE_API_TOKEN != '' && env.CLOUDFLARE_ACCOUNT_ID != '' }}

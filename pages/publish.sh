@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# 发布 dsh-tui 站点到 Cloudflare Pages
+# 发布 dsh-workbench 站点到 Cloudflare Pages
 #
 #   用法：
 #     ./publish.sh              # 发布前检查 + 上传 cloudflare-pages/dist
@@ -18,11 +18,11 @@
 #        ⚠️ publish.env 含密钥，不要提交到仓库、不要外发
 #
 #   待发布内容 = cloudflare-pages/dist/（改了页面就把新文件放进 dist）
-#   线上地址   = https://dsh-tui.pages.dev
+#   线上地址   = https://dsh-workbench.pages.dev
 #
 set -euo pipefail
 
-PROJECT_NAME="dsh-tui"
+PROJECT_NAME="dsh-workbench"
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DIST="$ROOT/cloudflare-pages/dist"
 P="[publish]"

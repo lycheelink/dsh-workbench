@@ -86,7 +86,7 @@ npm run pack:release  # Build + npm pack
 
 ```bash
 npm run sync:artifact   # 刷新插件内嵌副本（幂等剥离 builder node-id 噪音）
-./pages/publish.sh      # 部署 → https://dsh-tui.pages.dev（需 pages/publish.env，勿提交）
+./pages/publish.sh      # 部署 → https://dsh-workbench.pages.dev（需 pages/publish.env，勿提交）
 ```
 
 `publish.sh` 支持 `--check` / `--dry-run` / `--force` / `--help`；包含发布前污染自检与发布后字节数抽查。凭证从 `pages/publish.env` 读取（模板见 `pages/publish.env.example`）。
