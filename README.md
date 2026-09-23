@@ -91,6 +91,22 @@ npm run sync:artifact   # 刷新插件内嵌副本（幂等剥离 builder node-i
 
 `publish.sh` 支持 `--check` / `--dry-run` / `--force` / `--help`；包含发布前污染自检与发布后字节数抽查。凭证从 `pages/publish.env` 读取（模板见 `pages/publish.env.example`）。
 
+## Publishing to npm
+
+`@lycheelink/dsh-workbench` is published to [npm](https://www.npmjs.com/package/@lycheelink/dsh-workbench) from GitHub Actions on a version tag. Pushing a `vX.Y.Z` tag whose version equals `package.json` version triggers `.github/workflows/publish.yml`, which runs the full gate (tag ↔ version check → `npm ci` → `npm run build` → `npm test` → `npm pack` + artifact validation) and publishes the validated tarball to registry.npmjs.org with a sigstore provenance statement.
+
+```bash
+npm version patch -m "chore: release %s"  # bumps package.json + package-lock.json, creates commit + tag
+# keep dsh.plugin.json version in sync (npm version does not touch it)
+git push origin main
+git push origin v0.1.2                     # ← this push triggers the action
+```
+
+- **dist-tag semantics**: stable versions (no `-` prerelease suffix) publish to `latest`; prereleases (e.g. `0.1.2-alpha.0`, via `npm version prerelease --preid alpha`) publish to `next`.
+- The tag must equal `v{package.json.version}` exactly or the workflow aborts at the first step.
+- Requires the `NODE_AUTH_TOKEN` **org-level** GitHub Actions secret — a granular npm token with **Bypass 2FA** enabled (the npm account requires 2FA for publish; CI cannot answer OTP). `--provenance` additionally requires the repo to be **public**.
+- Versions must be new: npm rejects re-publishing an existing version, and the workflow refuses to move `latest` backwards.
+
 ## Slot Injections
 
 - `shell.overlay` — Full-page workbench layer + left-sidebar "工作台" nav entry
