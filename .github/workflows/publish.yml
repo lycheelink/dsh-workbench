@@ -125,7 +125,7 @@ jobs:
           for attempt in $(seq 1 90); do
             PACK="$(curl -fsS "https://registry.npmjs.org/@lycheelink%2fdsh-workbench" 2>/dev/null || true)"
             PUBLISHED="$(printf '%s' "$PACK" | jq -r --arg v "$VERSION" '.versions[$v].version // empty')"
-            TAGGED="$(printf '%s' "$PACK" | jq -r --arg t "$TAG" '.dist-tags[$t] // empty')"
+            TAGGED="$(printf '%s' "$PACK" | jq -r --arg t "$TAG" '.["dist-tags"][$t] // empty')"
             if [ "$PUBLISHED" = "$VERSION" ] && [ "$TAGGED" = "$VERSION" ]; then
               break
             fi
