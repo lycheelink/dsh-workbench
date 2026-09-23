@@ -1,0 +1,51 @@
+# 发布 pages/cloudflare-pages/dist → Cloudflare Pages（dsh-tui，https://dsh-tui.pages.dev）
+#
+# 需要仓库 Secret（Settings → Secrets and variables → Actions）：
+#   CLOUDFLARE_API_TOKEN   权限 Account → Cloudflare Pages → Edit
+#   CLOUDFLARE_ACCOUNT_ID  Dashboard 右侧栏的 32 位串
+#   获取方式与本地手动发布流程见 pages/publish.env.example / pages/publish.sh
+#
+# 触发：main 分支上 pages/** 变化时自动发布；也可手动 workflow_dispatch 触发。
+# 每次先跑 ./pages/publish.sh --check（污染自检 + 结构检查，无需凭证，作为提交进
+# dist 的内容门禁），凭证存在时才真正发布；Secret 缺失时跳过发布并给出告警提示。
+name: publish-pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "pages/**"
+  workflow_dispatch:
+
+concurrency:
+  group: publish-pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Pre-deploy self-check
+        run: ./pages/publish.sh --check
+
+      - name: Deploy to Cloudflare Pages
+        if: ${{ secrets.CLOUDFLARE_API_TOKEN != '' && secrets.CLOUDFLARE_ACCOUNT_ID != '' }}
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: ./pages/publish.sh
+
+      - name: Warn when secrets are missing
+        if: ${{ secrets.CLOUDFLARE_API_TOKEN == '' || secrets.CLOUDFLARE_ACCOUNT_ID == '' }}
+        run: |
+          echo "::warning::未配置 CLOUDFLARE_API_TOKEN / CLOUDFLARE_ACCOUNT_ID，跳过发布。"
+          echo "请先在仓库 Settings → Secrets and variables → Actions 添加这两个 Secret，"
+          echo "然后手动触发本 workflow（workflow_dispatch）完成首次发布。"
