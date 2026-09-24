@@ -128,6 +128,23 @@ export const launchCardSessionRequestSchema = z.object({
   formData: z.record(z.any())
 });
 
+/** Prompt-template fields users may override on an existing card (lightweight edit). */
+export const cardTemplatePatchSchema = z.object({
+  title: z.string().trim().min(1).max(80).optional(),
+  description: z.string().trim().min(1).max(1000).optional(),
+  systemPrompt: z.string().trim().min(1).max(8000).optional(),
+  allowedTools: z.array(z.string().trim().min(1)).max(32).optional()
+}).refine((value) => Object.keys(value).length > 0, { message: "empty patch" });
+
+export const updateCardRequestSchema = z.object({
+  cardId: z.string(),
+  patch: cardTemplatePatchSchema
+});
+
+export const resetCardRequestSchema = z.object({
+  cardId: z.string()
+});
+
 export const getSessionRequestSchema = z.object({
   sessionId: z.string()
 });
@@ -139,6 +156,14 @@ export const listCardsResultSchema = resultSchema(
 );
 
 export const getCardResultSchema = resultSchema(
+  z.object({ card: workbenchCardSchema })
+);
+
+export const updateCardResultSchema = resultSchema(
+  z.object({ card: workbenchCardSchema })
+);
+
+export const resetCardResultSchema = resultSchema(
   z.object({ card: workbenchCardSchema })
 );
 

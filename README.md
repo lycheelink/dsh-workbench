@@ -99,7 +99,7 @@ npm run sync:artifact   # 刷新插件内嵌副本（幂等剥离 builder node-i
 npm version patch -m "chore: release %s"  # bumps package.json + package-lock.json, creates commit + tag
 # keep dsh.plugin.json version in sync (npm version does not touch it)
 git push origin main
-git push origin v0.1.2                     # ← this push triggers the action
+git push origin v0.1.3                     # ← this push triggers the action
 ```
 
 - **dist-tag semantics**: stable versions (no `-` prerelease suffix) publish to `latest`; prereleases (e.g. `0.1.2-alpha.0`, via `npm version prerelease --preid alpha`) publish to `next`.

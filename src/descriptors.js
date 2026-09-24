@@ -11,10 +11,14 @@ import {
   emptyRequestSchema,
   getCardRequestSchema,
   launchCardSessionRequestSchema,
+  updateCardRequestSchema,
+  resetCardRequestSchema,
   getSessionRequestSchema,
   listCardsResultSchema,
   getCardResultSchema,
   launchCardSessionResultSchema,
+  updateCardResultSchema,
+  resetCardResultSchema,
   listSessionsResultSchema,
   getSessionResultSchema,
   deleteSessionResultSchema
@@ -60,6 +64,8 @@ export const DESCRIPTORS = [
   def("listCards", emptyRequestSchema, "WorkbenchListCardsRequest", listCardsResultSchema, "WorkbenchListCardsResult"),
   def("getCard", getCardRequestSchema, "WorkbenchGetCardRequest", getCardResultSchema, "WorkbenchGetCardResult"),
   def("launchCardSession", launchCardSessionRequestSchema, "WorkbenchLaunchCardSessionRequest", launchCardSessionResultSchema, "WorkbenchLaunchCardSessionResult"),
+  def("updateCard", updateCardRequestSchema, "WorkbenchUpdateCardRequest", updateCardResultSchema, "WorkbenchUpdateCardResult"),
+  def("resetCard", resetCardRequestSchema, "WorkbenchResetCardRequest", resetCardResultSchema, "WorkbenchResetCardResult"),
   def("listSessions", emptyRequestSchema, "WorkbenchListSessionsRequest", listSessionsResultSchema, "WorkbenchListSessionsResult"),
   def("getSession", getSessionRequestSchema, "WorkbenchGetSessionRequest", getSessionResultSchema, "WorkbenchGetSessionResult"),
   def("deleteSession", getSessionRequestSchema, "WorkbenchDeleteSessionRequest", deleteSessionResultSchema, "WorkbenchDeleteSessionResult")

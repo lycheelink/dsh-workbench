@@ -19,6 +19,7 @@ import WorkbenchService from "../lib/index.js";
 import { DESCRIPTORS } from "../lib/descriptors.js";
 import { TYPERT } from "../lib/typert.js";
 import { evaluateCondition, missingRequiredFields, activeConditionalGroups } from "../src/conditions.js";
+import { BUILTIN_CARDS } from "../src/cards.js";
 
 // Build a service instance without a live cordis context (pure helpers only).
 function makeService(overrides = {}) {
@@ -419,9 +420,99 @@ result = await serviceLaunch.deleteSession({ sessionId: listed.sessionId });
 assert.equal(result.ok, false, "deleteSession on a missing session reports an error");
 assert.equal(result.error.code, "session-not-found", "missing session → session-not-found");
 
+// ── updateCard / resetCard: prompt-template overrides ───────────────────────
+
+// A cardTable stub that records writes so persistence is observable.
+const cardPuts = [];
+const cardDeletes = [];
+const serviceCards = Object.create(WorkbenchService.prototype);
+serviceCards.cardCache = new Map();
+serviceCards.sessionStore = new Map();
+serviceCards.config = {};
+serviceCards.cardTable = {
+  entries: () => [],
+  put: async (id, record) => { cardPuts.push({ id, record }); },
+  delete: async (id) => { cardDeletes.push(id); }
+};
+
+// Seed with the pristine built-in reference (the clone invariant matters).
+const builtinVeriflow = BUILTIN_CARDS.find((c) => c.id === "veriflow");
+assert.ok(builtinVeriflow !== undefined, "built-in veriflow card exists");
+serviceCards.cardCache.set("veriflow", builtinVeriflow);
+
+result = await serviceCards.updateCard({
+  cardId: "veriflow",
+  patch: {
+    title: "VeriFlow 测试（定制）",
+    description: "定制描述",
+    systemPrompt: "定制系统指令",
+    allowedTools: ["file_read", "bash"]
+  }
+});
+assert.equal(result.ok, true, "updateCard merges the patch");
+assert.equal(result.value.card.title, "VeriFlow 测试（定制）", "title patched");
+assert.equal(result.value.card.agentConfig.systemPrompt, "定制系统指令", "systemPrompt patched");
+assert.deepEqual(result.value.card.agentConfig.allowedTools, ["file_read", "bash"], "allowedTools patched");
+assert.equal(result.value.card.formSchema, builtinVeriflow.formSchema, "formSchema untouched");
+assert.equal("createdAt" in result.value.card, false, "wire card carries no createdAt");
+assert.equal("updatedAt" in result.value.card, false, "wire card carries no updatedAt");
+
+// Clone-on-write: the BUILTIN_CARDS shared reference must not be mutated.
+assert.equal(builtinVeriflow.title, "验证流测试", "BUILTIN_CARDS reference not mutated by updateCard");
+assert.equal(
+  builtinVeriflow.agentConfig.systemPrompt.startsWith("你是一名推理服务验证流测试助手"),
+  true,
+  "built-in systemPrompt intact after updateCard"
+);
+
+// Persistence: the override is written to the storage domain with timestamps.
+assert.equal(cardPuts.length, 1, "updateCard persists one record");
+assert.equal(cardPuts[0].id, "veriflow", "override keyed by card id");
+assert.equal(typeof cardPuts[0].record.createdAt, "string", "record carries createdAt");
+assert.equal(typeof cardPuts[0].record.updatedAt, "string", "record carries updatedAt");
+
+// A partial patch leaves the other fields intact.
+result = await serviceCards.updateCard({ cardId: "veriflow", patch: { systemPrompt: "仅改指令" } });
+assert.equal(result.ok, true, "partial patch ok");
+assert.equal(result.value.card.agentConfig.systemPrompt, "仅改指令", "partial patch applies");
+assert.equal(result.value.card.title, "VeriFlow 测试（定制）", "untouched field preserved");
+assert.equal(cardPuts.length, 2, "second update persists again");
+
+// Unknown card → card-not-found.
+result = await serviceCards.updateCard({ cardId: "nope", patch: { title: "x" } });
+assert.equal(result.ok, false, "updateCard unknown card errors");
+assert.equal(result.error.code, "card-not-found", "updateCard unknown card → card-not-found");
+
+// Field caps / empty patch are rejected at the wire-codec boundary.
+const updateCodec = DESCRIPTORS.find((d) => d.method === "updateCard").parameters[0].codec;
+assert.throws(
+  () => updateCodec.schema.parse({ cardId: "veriflow", patch: {} }),
+  /empty patch/,
+  "empty patch must be rejected by the request codec"
+);
+assert.throws(
+  () => updateCodec.schema.parse({ cardId: "veriflow", patch: { systemPrompt: "  " } }),
+  undefined,
+  "whitespace-only systemPrompt must be rejected by the request codec"
+);
+
+// resetCard restores the pristine built-in and drops the override.
+result = await serviceCards.resetCard({ cardId: "veriflow" });
+assert.equal(result.ok, true, "resetCard ok");
+assert.equal(result.value.card.title, "验证流测试", "resetCard restores the built-in title");
+// Content equality, not reference identity: lib/index.js bundles its own copy
+// of BUILTIN_CARDS, distinct from the src/cards.js module the test imports.
+assert.deepEqual(serviceCards.cardCache.get("veriflow"), builtinVeriflow, "cache holds the pristine built-in definition after reset");
+assert.deepEqual(cardDeletes, ["veriflow"], "resetCard deletes the override record");
+
+// resetCard on an unknown id errors.
+result = await serviceCards.resetCard({ cardId: "nope" });
+assert.equal(result.ok, false, "resetCard unknown card errors");
+assert.equal(result.error.code, "card-not-found", "resetCard unknown card → card-not-found");
+
 // ── InvocationDescriptor shape (F2) ─────────────────────────────────────────
 
-assert.ok(Array.isArray(DESCRIPTORS) && DESCRIPTORS.length === 6, "six remote methods");
+assert.ok(Array.isArray(DESCRIPTORS) && DESCRIPTORS.length === 8, "eight remote methods");
 for (const d of DESCRIPTORS) {
   assert.equal(d.service, "workbench", `${d.method}: service key must be workbench`);
   assert.equal(d.namespace, "workbench", `${d.method}: namespace must be workbench`);
@@ -483,7 +574,7 @@ assert.ok(TYPERT.model && typeof TYPERT.model === "object", "manifest has a mode
 assert.equal(Array.isArray(TYPERT.model.services), true, "model has services");
 const svc = TYPERT.model.services[0];
 assert.equal(svc.key, "workbench", "model service key matches");
-assert.ok(Array.isArray(svc.members) && svc.members.length === 6, "model service lists 6 methods");
+assert.ok(Array.isArray(svc.members) && svc.members.length === 8, "model service lists 8 methods");
 assert.ok(Array.isArray(svc.types) && svc.types.length > 0, "model service declares types");
 
 // ── init(): storage domains open + session/event subscription (F3) ───────────

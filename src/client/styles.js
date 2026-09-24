@@ -5,45 +5,54 @@
  */
 export const WORKBENCH_CSS = `
 /* ── Left-sidebar nav entry ─────────────────────────────── */
+/* Mirrors the host's "插件" panelRow (hHd-Xa_panelRow) so the entry reads as
+ * a flat list row, not a card button: transparent bg, no border, 36px tall,
+ * left-aligned, regular weight, 8px icon gap. Hover/active use the same host
+ * design tokens as the sibling row. */
 .dsh-wb-sidebar-nav {
-  --dsh-wb-brand: var(--dsw-alias-brand, #2d6cdf);
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 6px;
+  justify-content: flex-start;
+  gap: 8px;
   box-sizing: border-box;
   width: calc(100% - 4px);
-  height: 38px;
+  min-height: 36px;
+  /* Row metrics match hHd-Xa_panelRow; the 8px bottom margin echoes the
+   * panelList group gap that separates the 插件 group from the next section. */
   margin: 0 2px 8px;
-  padding: 8px 16px;
-  border: 0.5px solid rgba(0, 0, 0, 0.12);
+  padding: 7px 8px;
+  border: none;
   border-radius: 12px;
-  background: var(--dsw-alias-bg, #ffffff);
-  color: var(--dsw-alias-label, #0f1115);
-  font: 500 14px/22px var(--dsw-font-family, inherit);
+  background: transparent;
+  color: var(--dsw-alias-label-primary, #0f1115);
+  font: inherit;
+  text-align: left;
   cursor: pointer;
   flex: none;
 }
-.dsh-wb-sidebar-nav:hover {
+.dsh-wb-sidebar-nav:hover,
+.dsh-wb-sidebar-nav-active {
   background: var(--dsw-alias-interactive-bg-hover, rgba(128,128,128,0.08));
+}
+.dsh-wb-sidebar-nav:focus-visible {
+  outline: 2px solid var(--dsw-alias-label-primary, #0f1115);
+  outline-offset: -2px;
 }
 .dsh-wb-sidebar-nav svg { flex: none; }
 .dsh-wb-sidebar-nav-label {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  min-width: 0;
 }
-.dsh-wb-sidebar-nav-active {
-  border-color: var(--dsh-wb-brand);
-  color: var(--dsh-wb-brand);
-  background: color-mix(in srgb, var(--dsh-wb-brand) 10%, transparent);
-}
-/* Narrow rail: icon only, centered. */
+/* Narrow rail: icon only, centered (host collapsed panelRow metrics). */
 .dsh-wb-sidebar-nav.dsh-wb-compact {
-  width: 38px;
-  padding: 8px;
+  width: 36px;
+  height: 36px;
+  padding: 0;
   margin-left: auto;
   margin-right: auto;
+  justify-content: center;
 }
 .dsh-wb-sidebar-nav.dsh-wb-compact .dsh-wb-sidebar-nav-label { display: none; }
 
@@ -56,13 +65,19 @@ html[data-dsh-workbench-page-open] [class*="detailsCol"] {
   visibility: hidden;
 }
 
-.dsh-wb-page {
+/* Design tokens shared by the page layer and the settings tab (which lives
+ * outside .dsh-wb-page inside the host's settings page). Hardcoded fallbacks
+ * keep both usable when DSH's --dsw-alias-* tokens are absent. */
+.dsh-wb-page,
+.dsh-wb-settings {
   --dsh-wb-brand: var(--dsw-alias-brand, #2d6cdf);
   --dsh-wb-border: var(--dsw-alias-border, rgba(128,128,128,0.25));
   --dsh-wb-bg: var(--dsw-alias-bg, #ffffff);
   --dsh-wb-bg-2: var(--dsw-alias-bg-hover, rgba(128,128,128,0.06));
   --dsh-wb-text: var(--dsw-alias-label, #1f2328);
   --dsh-wb-text-2: var(--dsw-alias-label-secondary, #656d76);
+}
+.dsh-wb-page {
   position: absolute;
   top: 0;
   bottom: 0;
@@ -410,22 +425,66 @@ html[data-dsh-workbench-page-open] [class*="detailsCol"] {
 .dsh-wb-settings h3 { margin: 0 0 4px; font-size: 15px; }
 .dsh-wb-settings p { margin: 0 0 10px; font-size: 12px; color: var(--dsh-wb-text-2); }
 .dsh-wb-settings-card-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
-.dsh-wb-settings-card-list li {
+.dsh-wb-settings-card-row {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: stretch;
   gap: 8px;
   padding: 8px 10px;
   border: 1px solid var(--dsh-wb-border);
   border-radius: 6px;
 }
+.dsh-wb-settings-card-main { display: flex; align-items: center; gap: 8px; }
 .dsh-wb-settings-card-id { font-size: 11px; color: var(--dsh-wb-text-2); font-family: ui-monospace, monospace; }
 .dsh-wb-settings-card-category {
-  margin-left: auto;
   font-size: 10px;
   padding: 1px 6px;
   border-radius: 999px;
   background: var(--dsh-wb-bg-2);
   color: var(--dsh-wb-text-2);
+}
+.dsh-wb-settings-card-actions { margin-left: auto; display: flex; gap: 6px; }
+.dsh-wb-settings-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border-top: 1px dashed var(--dsh-wb-border);
+  padding-top: 10px;
+}
+.dsh-wb-prompt-textarea { font-family: ui-monospace, monospace; font-size: 11px; line-height: 1.5; }
+/* .dsh-wb-settings p sets text-2 on every <p>; re-scope the editor labels/desc
+   and the error/notice messages so their own colors win. */
+.dsh-wb-settings-editor .dsh-wb-form-desc { margin: 0; }
+.dsh-wb-settings-editor .dsh-wb-preview-label { margin: 0 0 4px; font-size: 11px; color: var(--dsh-wb-text-2); font-weight: 500; }
+.dsh-wb-settings .dsh-wb-error { color: var(--dsw-alias-danger, #dc3545); }
+.dsh-wb-settings .dsh-wb-notice { color: var(--dsh-wb-text); }
+.dsh-wb-notice {
+  margin-top: 8px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--dsh-wb-brand) 10%, transparent);
+  font-size: 12px;
+}
+.dsh-wb-prompt-preview {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--dsh-wb-border);
+  border-radius: 6px;
+  background: var(--dsh-wb-bg-2);
+  color: var(--dsh-wb-text);
+  font-family: ui-monospace, monospace;
+  font-size: 11px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 260px;
+  overflow: auto;
+}
+.dsh-wb-reset-confirm {
+  background: color-mix(in srgb, var(--dsw-alias-danger, #dc3545) 12%, transparent);
+  border-color: var(--dsw-alias-danger, #dc3545);
+  color: var(--dsw-alias-danger, #dc3545);
+  font-weight: 600;
 }
 `;
 

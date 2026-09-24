@@ -60,10 +60,6 @@ const sessionDomainSpec = defineDomain({
   }
 });
 
-// ── Built-in card IDs ──────────────────────────────────────────────────────
-
-const BUILTIN_CARD_IDS = new Set(BUILTIN_CARDS.map((c) => c.id));
-
 /**
  * Cards whose config surface is a vendored HTML console (the 寻优参数采集台)
  * rendered by the client inside an iframe, rather than a DynamicForm. For
@@ -150,20 +146,20 @@ export default class WorkbenchService extends TypertRemoteService {
     this.sessionTable = sessionDomain.table("sessions");
     this.ctx.effect(() => () => sessionDomain.close(), "dsh-workbench: session domain close");
 
-    // Load user-defined cards from storage (built-ins stay in cache)
+    // Load cards from storage. Built-ins stay in the constructor cache; a
+    // domain record for a built-in id is a prompt-template override and must
+    // win over the built-in (updateCard persists it, resetCard removes it).
     for (const [id, record] of this.cardTable.entries()) {
-      if (!BUILTIN_CARD_IDS.has(id)) {
-        this.cardCache.set(id, {
-          id: record.id,
-          title: record.title,
-          description: record.description,
-          icon: record.icon,
-          category: record.category,
-          formSchema: record.formSchema,
-          conditionalFields: record.conditionalFields,
-          agentConfig: record.agentConfig
-        });
-      }
+      this.cardCache.set(id, {
+        id: record.id,
+        title: record.title,
+        description: record.description,
+        icon: record.icon,
+        category: record.category,
+        formSchema: record.formSchema,
+        conditionalFields: record.conditionalFields,
+        agentConfig: record.agentConfig
+      });
     }
 
     // Load persisted sessions
@@ -210,6 +206,57 @@ export default class WorkbenchService extends TypertRemoteService {
       return { ok: false, error: { code: "card-not-found", message: `Card "${input?.id}" not found` } };
     }
     return { ok: true, value: { card: { ...card } } };
+  }
+
+  /**
+   * Override the prompt-template fields of an existing card (title /
+   * description / systemPrompt / allowedTools). The merged card is persisted
+   * to the storage domain keyed by the card id, so a built-in override
+   * survives restarts (init() applies it) and resetCard() can roll it back.
+   *
+   * Field validation happens at the wire boundary via the request codec; here
+   * we only merge (clone — never mutate the BUILTIN_CARDS shared references)
+   * and persist.
+   */
+  async updateCard(input) {
+    const { cardId, patch } = input ?? {};
+    const current = this.cardCache.get(cardId);
+    if (current === undefined) {
+      return { ok: false, error: { code: "card-not-found", message: `Card "${cardId}" not found` } };
+    }
+    const merged = {
+      ...current,
+      title: patch.title ?? current.title,
+      description: patch.description ?? current.description,
+      agentConfig: {
+        ...current.agentConfig,
+        systemPrompt: patch.systemPrompt ?? current.agentConfig.systemPrompt,
+        allowedTools: patch.allowedTools ?? current.agentConfig.allowedTools
+      }
+    };
+    const now = new Date().toISOString();
+    this.cardCache.set(cardId, merged);
+    if (this.cardTable !== null) {
+      await this.cardTable.put(cardId, { ...merged, createdAt: now, updatedAt: now });
+    }
+    return { ok: true, value: { card: { ...merged } } };
+  }
+
+  /**
+   * Drop a built-in card's template override and restore the pristine built-in
+   * definition from BUILTIN_CARDS. Only built-in ids are resettable.
+   */
+  async resetCard(input) {
+    const { cardId } = input ?? {};
+    const builtin = BUILTIN_CARDS.find((card) => card.id === cardId);
+    if (builtin === undefined) {
+      return { ok: false, error: { code: "card-not-found", message: `No built-in card "${cardId}"` } };
+    }
+    this.cardCache.set(cardId, builtin);
+    if (this.cardTable !== null) {
+      await this.cardTable.delete(cardId);
+    }
+    return { ok: true, value: { card: { ...builtin } } };
   }
 
   /**
