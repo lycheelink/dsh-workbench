@@ -37,18 +37,21 @@ export async function apply(ctx) {
 
   /**
    * Jump the DSH conversation column to a session (used after a card launch).
-   * The session list must be refreshed first — the client's `sessions.open`
-   * throws for sessions not yet present in the list catalog.
+   * The session list must be refreshed first — `sessions.retain` (the host
+   * workspace's open-a-conversation path) throws for sessions not yet present
+   * in the client catalog.
    */
   const openSession = async (sessionId) => {
     const sessions = ctx.sessions;
-    if (!sessions || typeof sessions.refresh !== "function" || typeof sessions.open !== "function") {
+    if (!sessions || typeof sessions.refresh !== "function" || typeof sessions.retain !== "function") {
       return;
     }
     for (let attempt = 0; attempt < 5; attempt += 1) {
       try {
         await sessions.refresh();
-        sessions.open(sessionId);
+        // The host facade has no sessions.open; replaceMain uses
+        // retain(id, { source: "mainView" }) to bring a conversation forward.
+        sessions.retain(sessionId, { source: "mainView" });
         return;
       } catch {
         // The spawned session may lag behind the list; retry with backoff.

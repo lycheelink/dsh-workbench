@@ -5,45 +5,54 @@
  */
 export const WORKBENCH_CSS = `
 /* ── Left-sidebar nav entry ─────────────────────────────── */
+/* Mirrors the host's "插件" panelRow (hHd-Xa_panelRow) so the entry reads as
+ * a flat list row, not a card button: transparent bg, no border, 36px tall,
+ * left-aligned, regular weight, 8px icon gap. Hover/active use the same host
+ * design tokens as the sibling row. */
 .dsh-wb-sidebar-nav {
-  --dsh-wb-brand: var(--dsw-alias-brand, #2d6cdf);
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 6px;
+  justify-content: flex-start;
+  gap: 8px;
   box-sizing: border-box;
   width: calc(100% - 4px);
-  height: 38px;
+  min-height: 36px;
+  /* Row metrics match hHd-Xa_panelRow; the 8px bottom margin echoes the
+   * panelList group gap that separates the 插件 group from the next section. */
   margin: 0 2px 8px;
-  padding: 8px 16px;
-  border: 0.5px solid rgba(0, 0, 0, 0.12);
+  padding: 7px 8px;
+  border: none;
   border-radius: 12px;
-  background: var(--dsw-alias-bg, #ffffff);
-  color: var(--dsw-alias-label, #0f1115);
-  font: 500 14px/22px var(--dsw-font-family, inherit);
+  background: transparent;
+  color: var(--dsw-alias-label-primary, #0f1115);
+  font: inherit;
+  text-align: left;
   cursor: pointer;
   flex: none;
 }
-.dsh-wb-sidebar-nav:hover {
+.dsh-wb-sidebar-nav:hover,
+.dsh-wb-sidebar-nav-active {
   background: var(--dsw-alias-interactive-bg-hover, rgba(128,128,128,0.08));
+}
+.dsh-wb-sidebar-nav:focus-visible {
+  outline: 2px solid var(--dsw-alias-label-primary, #0f1115);
+  outline-offset: -2px;
 }
 .dsh-wb-sidebar-nav svg { flex: none; }
 .dsh-wb-sidebar-nav-label {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  min-width: 0;
 }
-.dsh-wb-sidebar-nav-active {
-  border-color: var(--dsh-wb-brand);
-  color: var(--dsh-wb-brand);
-  background: color-mix(in srgb, var(--dsh-wb-brand) 10%, transparent);
-}
-/* Narrow rail: icon only, centered. */
+/* Narrow rail: icon only, centered (host collapsed panelRow metrics). */
 .dsh-wb-sidebar-nav.dsh-wb-compact {
-  width: 38px;
-  padding: 8px;
+  width: 36px;
+  height: 36px;
+  padding: 0;
   margin-left: auto;
   margin-right: auto;
+  justify-content: center;
 }
 .dsh-wb-sidebar-nav.dsh-wb-compact .dsh-wb-sidebar-nav-label { display: none; }
 
