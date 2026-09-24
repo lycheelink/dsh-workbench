@@ -65,13 +65,19 @@ html[data-dsh-workbench-page-open] [class*="detailsCol"] {
   visibility: hidden;
 }
 
-.dsh-wb-page {
+/* Design tokens shared by the page layer and the settings tab (which lives
+ * outside .dsh-wb-page inside the host's settings page). Hardcoded fallbacks
+ * keep both usable when DSH's --dsw-alias-* tokens are absent. */
+.dsh-wb-page,
+.dsh-wb-settings {
   --dsh-wb-brand: var(--dsw-alias-brand, #2d6cdf);
   --dsh-wb-border: var(--dsw-alias-border, rgba(128,128,128,0.25));
   --dsh-wb-bg: var(--dsw-alias-bg, #ffffff);
   --dsh-wb-bg-2: var(--dsw-alias-bg-hover, rgba(128,128,128,0.06));
   --dsh-wb-text: var(--dsw-alias-label, #1f2328);
   --dsh-wb-text-2: var(--dsw-alias-label-secondary, #656d76);
+}
+.dsh-wb-page {
   position: absolute;
   top: 0;
   bottom: 0;
@@ -419,22 +425,66 @@ html[data-dsh-workbench-page-open] [class*="detailsCol"] {
 .dsh-wb-settings h3 { margin: 0 0 4px; font-size: 15px; }
 .dsh-wb-settings p { margin: 0 0 10px; font-size: 12px; color: var(--dsh-wb-text-2); }
 .dsh-wb-settings-card-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
-.dsh-wb-settings-card-list li {
+.dsh-wb-settings-card-row {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: stretch;
   gap: 8px;
   padding: 8px 10px;
   border: 1px solid var(--dsh-wb-border);
   border-radius: 6px;
 }
+.dsh-wb-settings-card-main { display: flex; align-items: center; gap: 8px; }
 .dsh-wb-settings-card-id { font-size: 11px; color: var(--dsh-wb-text-2); font-family: ui-monospace, monospace; }
 .dsh-wb-settings-card-category {
-  margin-left: auto;
   font-size: 10px;
   padding: 1px 6px;
   border-radius: 999px;
   background: var(--dsh-wb-bg-2);
   color: var(--dsh-wb-text-2);
+}
+.dsh-wb-settings-card-actions { margin-left: auto; display: flex; gap: 6px; }
+.dsh-wb-settings-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border-top: 1px dashed var(--dsh-wb-border);
+  padding-top: 10px;
+}
+.dsh-wb-prompt-textarea { font-family: ui-monospace, monospace; font-size: 11px; line-height: 1.5; }
+/* .dsh-wb-settings p sets text-2 on every <p>; re-scope the editor labels/desc
+   and the error/notice messages so their own colors win. */
+.dsh-wb-settings-editor .dsh-wb-form-desc { margin: 0; }
+.dsh-wb-settings-editor .dsh-wb-preview-label { margin: 0 0 4px; font-size: 11px; color: var(--dsh-wb-text-2); font-weight: 500; }
+.dsh-wb-settings .dsh-wb-error { color: var(--dsw-alias-danger, #dc3545); }
+.dsh-wb-settings .dsh-wb-notice { color: var(--dsh-wb-text); }
+.dsh-wb-notice {
+  margin-top: 8px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--dsh-wb-brand) 10%, transparent);
+  font-size: 12px;
+}
+.dsh-wb-prompt-preview {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--dsh-wb-border);
+  border-radius: 6px;
+  background: var(--dsh-wb-bg-2);
+  color: var(--dsh-wb-text);
+  font-family: ui-monospace, monospace;
+  font-size: 11px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 260px;
+  overflow: auto;
+}
+.dsh-wb-reset-confirm {
+  background: color-mix(in srgb, var(--dsw-alias-danger, #dc3545) 12%, transparent);
+  border-color: var(--dsw-alias-danger, #dc3545);
+  color: var(--dsw-alias-danger, #dc3545);
+  font-weight: 600;
 }
 `;
 

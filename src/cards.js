@@ -3,7 +3,11 @@
  * formSchema, conditional fields, and agent configuration.
  *
  * Aligned with the PDR §3 data model. New cards can be added at runtime
- * through the workbench service, or loaded from domain storage.
+ * through the workbench service, or loaded from domain storage. The prompt
+ * template fields (title / description / agentConfig.systemPrompt /
+ * agentConfig.allowedTools) are user-overridable via the workbench
+ * `updateCard` method; a persisted override shadows this definition until
+ * `resetCard` rolls it back.
  */
 
 /** @type {import('./index.js').WorkbenchCard[]} */

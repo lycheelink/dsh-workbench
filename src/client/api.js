@@ -49,6 +49,14 @@ export class WorkbenchApi {
     return this.call("launchCardSession", { cardId, formData });
   }
 
+  updateCard(cardId, patch) {
+    return this.call("updateCard", { cardId, patch });
+  }
+
+  resetCard(cardId) {
+    return this.call("resetCard", { cardId });
+  }
+
   listSessions() {
     return this.call("listSessions", {});
   }

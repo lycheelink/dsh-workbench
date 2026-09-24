@@ -27,7 +27,22 @@ export const zh = {
   controlRoomHint: "实时监控所有正在运行的 Agent Session 状态",
   delete: "删除",
   confirmDelete: "确认删除?",
-  stepRunning: "步骤进行中"
+  stepRunning: "步骤进行中",
+  edit: "编辑",
+  editCardTemplate: "编辑提示词模版",
+  save: "保存",
+  resetDefault: "恢复默认",
+  confirmReset: "确认恢复默认?",
+  fieldSceneTitle: "场景标题",
+  fieldTaskDescription: "任务说明",
+  fieldSystemInstruction: "系统指令",
+  fieldAllowedTools: "可用工具",
+  toolsHint: "逗号分隔，如 file_read, bash, python_exec",
+  promptPreview: "提示词预览",
+  userInputSectionPlaceholder: "（用户提交的表单字段值将在此逐条列出）",
+  cardSaved: "已保存",
+  cardReset: "已恢复默认",
+  cardSaveFailed: "保存失败"
 };
 
 export const en = {
@@ -56,5 +71,20 @@ export const en = {
   controlRoomHint: "Live status of all running agent sessions",
   delete: "Delete",
   confirmDelete: "Confirm delete?",
-  stepRunning: "Step in progress"
+  stepRunning: "Step in progress",
+  edit: "Edit",
+  editCardTemplate: "Edit prompt template",
+  save: "Save",
+  resetDefault: "Reset to default",
+  confirmReset: "Reset to default?",
+  fieldSceneTitle: "Scene title",
+  fieldTaskDescription: "Task description",
+  fieldSystemInstruction: "System instruction",
+  fieldAllowedTools: "Allowed tools",
+  toolsHint: "Comma-separated, e.g. file_read, bash, python_exec",
+  promptPreview: "Prompt preview",
+  userInputSectionPlaceholder: "(User-submitted field values are listed here)",
+  cardSaved: "Saved",
+  cardReset: "Restored to default",
+  cardSaveFailed: "Save failed"
 };

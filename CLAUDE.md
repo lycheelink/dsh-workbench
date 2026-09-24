@@ -51,9 +51,9 @@ The same package ships two faces, both driven by shared "single sources of truth
 
 - **`src/schemas.js`** — all zod schemas: the `{ ok: true, value } | { ok: false, error: { code, message } }` envelope, card/session records, and per-method request/result schemas. Consumed by the host service, the descriptors, and the TYPERT manifest.
 - **`src/descriptors.js`** — `DESCRIPTORS`: one `InvocationDescriptor` per Remote method. This is consumed **on both faces**: the host TYPERT manifest (`src/typert.js`) and the browser contribution (`src/remote.js` → `TYPERT_REMOTE`).
-- **`src/typert.js`** — the host TYPERT manifest, discovered automatically through the package's `"./typert"` export. **Without this artifact the host never exposes `workbench/*` endpoints.** It registers 6 methods: `listCards / getCard / launchCardSession / listSessions / getSession / deleteSession`.
+- **`src/typert.js`** — the host TYPERT manifest, discovered automatically through the package's `"./typert"` export. **Without this artifact the host never exposes `workbench/*` endpoints.** It registers 8 methods: `listCards / getCard / updateCard / resetCard / launchCardSession / listSessions / getSession / deleteSession`.
 
-Every Remote method takes a single JSON `request` argument and returns the business envelope. Keep `schemas.js` → `descriptors.js` → `typert.js` in lockstep when touching the wire contract.
+Every Remote method takes a single JSON `request` argument and returns the business envelope. Keep `schemas.js` → `descriptors.js` → `typert.js` in lockstep when touching the wire contract. Card prompt-template fields (`title / description / agentConfig.systemPrompt / agentConfig.allowedTools`) are user-editable via `updateCard`; overrides persist to the `workbench_cards` storage domain keyed by the card id (init applies them on boot) and `resetCard` rolls a built-in back to `src/cards.js`.
 
 **Dual-shape schema/codec:** both manifest `schemas` and descriptor `codec`s must ship BOTH an eager zod v4 `schema` (host ≤0.1.5-rc.2 loader checks `_zod`) AND a `create()` factory returning a fresh schema (master / 0.1.6-alpha.1 lazy materialization). Dropping either breaks the other host line. `test/rc-verify.mjs` pins this with negative gates.
 
