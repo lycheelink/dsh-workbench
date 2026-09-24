@@ -553,7 +553,11 @@ table td:first-child{color:#fff}
 }
 .doc-footer .f-row{display:flex;flex-wrap:wrap;gap:8px 24px;margin-bottom:12px}
 .doc-footer a{color:var(--text-secondary)}
-.doc-footer .f-note{max-width:70ch;line-height:1.7}
+/* 页脚宽度是三页 footer_note 的折中（13px 字号下浏览器实测，CJK 每字恰 1em）：
+   旧值 70ch(≈612px) 把首页「生成的 JSON」拦腰拆成「生/成」；
+   42.5rem(≈680px) 落在窗口 [669,685)：首页第一行整句止于「生成的 JSON」，
+   且 ≥ 手册页全文宽 608.55、TUI 页 546.17 —— 两者保持单行不回退 */
+.doc-footer .f-note{max-width:42.5rem;line-height:1.7}
 
 /* ══════════════════ 右侧悬浮目录（TOC Rail）· 默认折叠为圆形图标 ══════════════════ */
 .toc-rail{
@@ -673,11 +677,11 @@ section[id]{scroll-margin-top:28px}
 <div>
 <span class="eyebrow"><span class="dot"></span>DeepSeek Harness · 面向最终用户</span>
 <h1><span class="grad">DSH 安装使用手册</span></h1>
-<p class="hero-sub">覆盖安装、启动、插件与技能管理、MCP 接入、故障排查与安全备份。核心规则只有一条：<strong>安装与升级都必须显式锁定版本号</strong>——本文以 <code>0.1.2-rc.1</code> 为基线，所有命令可直接复制执行。</p>
+<p class="hero-sub">覆盖安装、启动、插件与技能管理、MCP 接入、故障排查与安全备份。核心规则只有一条：<strong>安装与升级都必须显式锁定版本号</strong>——本文以 <code>0.1.5-rc.1</code> 为基线，所有命令可直接复制执行。</p>
 <ul class="hero-meta"><li class="chip">v1.1</li><li class="chip">2026-09-23</li><li class="chip">macOS / Node v22.22.2 实测</li></ul>
 </div>
 <div class="hero-side">
-<div class="mini"><span class="k">锁定版本</span><span class="v">宿主 <code>@deepseek-ai/dsh@0.1.2-rc.1</code>；插件以 npm 精确版本或 GitHub <code>#commit</code> 哈希锁定。</span></div><div class="mini"><span class="k">访问方式</span><span class="v">只认启动日志打印的、带 <code>?token=</code> 的完整地址；手输 <code>127.0.0.1:3080</code> 会 401。</span></div><div class="mini"><span class="k">生效条件</span><span class="v">安装或卸载<strong>插件</strong>后必须重启 <code>dsh web</code>，刷新浏览器无效；<strong>技能</strong>则无需重启。</span></div>
+<div class="mini"><span class="k">锁定版本</span><span class="v">宿主 <code>@deepseek-ai/dsh@0.1.5-rc.1</code>；插件以 npm 精确版本或 GitHub <code>#commit</code> 哈希锁定。</span></div><div class="mini"><span class="k">访问方式</span><span class="v">只认启动日志打印的、带 <code>?token=</code> 的完整地址；手输 <code>127.0.0.1:3080</code> 会 401。</span></div><div class="mini"><span class="k">生效条件</span><span class="v">安装或卸载<strong>插件</strong>后必须重启 <code>dsh web</code>，刷新浏览器无效；<strong>技能</strong>则无需重启。</span></div>
 </div>
 </header><section aria-label="关键数字" class="stat-band reveal">
 <div class="stat"><span class="n">523</span><p class="d">一次全局安装引入的依赖包数：约 7 分钟，期间请勿中断</p></div><div class="stat"><span class="n">12</span><p class="d">已实测插件：4 个推荐 · 6 个按需 · 2 个运维（版本见 §5.3）</p></div><div class="stat"><span class="n">5</span><p class="d">必守规则：锁版本 · 带 token 访问 · 装后重启 · 装后验证 · 勿装重复能力</p></div>
@@ -692,7 +696,7 @@ section[id]{scroll-margin-top:28px}
 <div class="code-block">
 <div class="code-head"><span class="dots"><i></i><i></i><i></i></span><span class="lang">sh</span></div>
 <pre><code># 必须锁定版本号，不要安装最新版
-npm install -g @deepseek-ai/dsh@0.1.2-rc.1</code></pre>
+npm install -g @deepseek-ai/dsh@0.1.5-rc.1</code></pre>
 </div><p class="t-body">共引入约 523 个包，属正常现象；完成后核对 <code>dsh --version</code>（见 §2.1）。</p>
 </li>
 <li>
@@ -700,7 +704,8 @@ npm install -g @deepseek-ai/dsh@0.1.2-rc.1</code></pre>
 <div class="code-block">
 <div class="code-head"><span class="dots"><i></i><i></i><i></i></span><span class="lang">sh</span></div>
 <pre><code>dsh plugin --profile web add "github:caoyiwei850/dsh-ssh-ops#6fdd0c33869dd9824860eb6295574736b8360634"
-dsh plugin --profile web add "github:lycheelink/dsh-skill-manager.git#f3703dca136bab14032dd5e1ae7d5754bbef7e1a"</code></pre>
+dsh plugin --profile web add "github:lycheelink/dsh-skill-manager.git#f3703dca136bab14032dd5e1ae7d5754bbef7e1a"
+dsh plugin --profile web add "@lycheelink/dsh-workbench"</code></pre>
 </div><p class="t-body">插件清单与选择建议见 §5.3；<code>--profile web</code> 的位置有讲究（见 §5.2）。</p>
 </li>
 <li>
@@ -719,7 +724,7 @@ dsh web</code></pre>
 </div><p class="t-body">必须复制包含 <code>?token=</code> 的完整地址在浏览器打开；手动输入 <code>127.0.0.1:3080</code> 将返回 401（见 §3.2）。</p>
 </li>
 </ol><p><strong>安装与使用五条守则</strong>：</p><ol>
-<li><strong>安装时须显式指定版本号 <code>0.1.2-rc.1</code></strong>。当前版本迭代频繁且不稳定，请勿安装默认最新版（见 §2.1）；</li>
+<li><strong>安装时须显式指定版本号 <code>0.1.5-rc.1</code></strong>。当前版本迭代频繁且不稳定，请勿安装默认最新版（见 §2.1）；</li>
 <li><strong>使用启动日志中打印的、带 <code>?token=</code> 的完整地址访问</strong>，勿自行拼接地址（见 §3.2）；</li>
 <li><strong>安装或卸载插件后须重启 <code>dsh web</code></strong>，仅刷新浏览器不起作用；</li>
 <li><strong>插件安装后须以命令验证其已加载</strong>，不能仅以安装无报错为准（见 §5.5）；</li>
@@ -748,20 +753,20 @@ npm -v</code></pre>
 <h2>2. 安装 DSH</h2>
 <p class="desc">两种路径：全局锁定版本（推荐），或 npx 临时体验。</p></div>
 <h3 id="sec-2-1"><span class="h3-tag">2.1</span>全局安装（推荐）</h3><div class="note warn">
-<p><strong>安装时务必携带版本号。</strong>DSH 目前处于快速迭代期，新版本不稳定且可能与插件互不兼容；不带版本号会安装到最新的版本，容易遇到问题。<strong>请统一安装 <code>0.1.2-rc.1</code></strong>，本文所有内容均基于该版本验证。</p>
+<p><strong>安装时务必携带版本号。</strong>DSH 目前处于快速迭代期，新版本不稳定且可能与插件互不兼容；不带版本号会安装到最新的版本，容易遇到问题。<strong>请统一安装 <code>0.1.5-rc.1</code></strong>，本文所有内容均基于该版本验证。</p>
 </div><div class="code-block">
 <div class="code-head"><span class="dots"><i></i><i></i><i></i></span><span class="lang">sh</span></div>
-<pre><code>npm install -g @deepseek-ai/dsh@0.1.2-rc.1</code></pre>
-</div><p>安装成功时，终端末尾输出类似 <code>added 523 packages in 7m</code>。首次安装约需数分钟，耗时较长属正常现象，期间请勿中断。</p><p>安装完成后请核对版本号，确认实际安装版本为 <code>0.1.2-rc.1</code>：</p><div class="code-block">
+<pre><code>npm install -g @deepseek-ai/dsh@0.1.5-rc.1</code></pre>
+</div><p>安装成功时，终端末尾输出类似 <code>added 523 packages in 7m</code>。首次安装约需数分钟，耗时较长属正常现象，期间请勿中断。</p><p>安装完成后请核对版本号，确认实际安装版本为 <code>0.1.5-rc.1</code>：</p><div class="code-block">
 <div class="code-head"><span class="dots"><i></i><i></i><i></i></span><span class="lang">sh</span></div>
 <pre><code>dsh --version
-# 预期输出：0.1.2-rc.1
+# 预期输出：0.1.5-rc.1
 # 若版本不符，说明未锁定，请重新执行安装命令</code></pre>
 </div><div class="note">
 <p><strong><code>dsh: command not found</code>？</strong>检查 npm 全局目录是否已加入 PATH（可通过 <code>npm bin -g</code> 查看）；Windows 用户请重新打开终端后重试。</p>
 </div><h3 id="sec-2-2"><span class="h3-tag">2.2</span>临时体验（不想装进系统）</h3><div class="code-block">
 <div class="code-head"><span class="dots"><i></i><i></i><i></i></span><span class="lang">sh</span></div>
-<pre><code>npx @deepseek-ai/dsh@0.1.2-rc.1 web</code></pre>
+<pre><code>npx @deepseek-ai/dsh@0.1.5-rc.1 web</code></pre>
 </div><p>该方式按需下载，不写入全局环境，仅适合临时试用：每次执行均需联网解析，且后续插件安装命令较长。如需长期使用，建议采用 §2.1 的全局安装方式（同样须指定版本号）。</p><h3 id="sec-2-3"><span class="h3-tag">2.3</span>卸载</h3><div class="code-block">
 <div class="code-head"><span class="dots"><i></i><i></i><i></i></span><span class="lang">sh</span></div>
 <pre><code>npm uninstall -g @deepseek-ai/dsh</code></pre>
@@ -836,14 +841,14 @@ dsh web                # 默认地址 http://127.0.0.1:3080，并自动打开浏
 </div><div class="note">
 <p><code>--profile web</code> 须置于 <code>plugin</code> 之后、<code>add</code> 之前，位置错误会报 <code>unknown option</code>。安装失败具有原子性，失败时不会破坏已有配置，可直接重试。</p>
 </div><h3 id="sec-5-3"><span class="h3-tag">5.3</span>推荐插件</h3><div class="note">
-<p>版本基线：宿主 <code>0.1.2-rc.1</code>，下表版本均于 2026-09-10 实测可用；表中 <code>...</code> 为 <code>dsh plugin --profile web</code> 的缩写。</p>
+<p>版本基线：宿主 <code>0.1.5-rc.1</code>，下表版本均于 2026-09-10 实测可用；表中 <code>...</code> 为 <code>dsh plugin --profile web</code> 的缩写。</p>
 </div><h4>推荐安装（低风险）</h4><div class="table-wrap">
 <table>
 <thead><tr><th>插件</th><th>功能描述</th><th>安装命令</th></tr></thead>
 <tbody><tr><td><code>dsh-plugin-check</code></td><td>插件体检，装新插件前先查一遍，避免把 DSH 搞崩</td><td><code>... add dsh-plugin-check@0.1.0</code></td></tr><tr><td><code>dsh-at-file</code></td><td>输入框打 <code>@</code> 搜索并引用工作区文件</td><td><code>... add dsh-at-file@0.6.3</code></td></tr><tr><td><code>dsh-paste-input</code></td><td>Ctrl+V 粘贴 / 拖拽文件作为附件</td><td><code>... add "github:omdsh-dev/dsh-paste-input#cc02be15"</code></td></tr><tr><td><code>dsh-session-health</code></td><td>会话健康检查，防止历史记录损坏丢失</td><td><code>... add dsh-session-health@0.6.0</code></td></tr></tbody>
 </table>
 </div><div class="note">
-<p>0.1.2 宿主已内置 <code>@</code> 引用能力且较为完善，安装 <code>dsh-at-file</code> 前可先评估原生功能是否满足需求。</p>
+<p>0.1.5 宿主已内置 <code>@</code> 引用能力且较为完善，安装 <code>dsh-at-file</code> 前可先评估原生功能是否满足需求。</p>
 </div><h4>按需安装</h4><div class="table-wrap">
 <table>
 <thead><tr><th>插件</th><th>功能描述</th><th>安装命令</th><th>注意事项</th></tr></thead>
@@ -1044,7 +1049,7 @@ dsh plugin --profile web add dsh-better-sidebar@0.18.1</code></pre>
 <div class="table-wrap">
 <table>
 <thead><tr><th>项</th><th>值</th></tr></thead>
-<tbody><tr><td>npm 包名</td><td><code>@deepseek-ai/dsh</code></td></tr><tr><td>官方仓库</td><td><a href="https://github.com/deepseek-ai/deepseek-harness" target="_blank" rel="noopener">github.com/deepseek-ai/deepseek-harness</a></td></tr><tr><td>数据目录</td><td><code>~/.dsh</code>（Windows：<code>C:\Users\&lt;用户&gt;\.dsh</code>）</td></tr><tr><td>技能目录</td><td><code>~/.dsh/skills</code>（ZIP 安装的落点，见 §6）</td></tr><tr><td>默认访问地址</td><td><code>http://127.0.0.1:3080</code>（需带 token，见 §3.2）</td></tr><tr><td><strong>本文锁定版本</strong></td><td><strong><code>0.1.2-rc.1</code></strong> —— 安装时须显式指定，见 §2.1</td></tr><tr><td>站点头页</td><td><a href="index.html" target="_blank" rel="noopener">index.html</a> —— 插件说明与全部工具入口</td></tr><tr><td>姊妹篇</td><td><a href="dsh-tui-quick-start.html" target="_blank" rel="noopener">dsh-TUI Quick Start</a> —— 终端 TUI 版上手指南</td></tr></tbody>
+<tbody><tr><td>npm 包名</td><td><code>@deepseek-ai/dsh</code></td></tr><tr><td>官方仓库</td><td><a href="https://github.com/deepseek-ai/deepseek-harness" target="_blank" rel="noopener">github.com/deepseek-ai/deepseek-harness</a></td></tr><tr><td>数据目录</td><td><code>~/.dsh</code>（Windows：<code>C:\Users\&lt;用户&gt;\.dsh</code>）</td></tr><tr><td>技能目录</td><td><code>~/.dsh/skills</code>（ZIP 安装的落点，见 §6）</td></tr><tr><td>默认访问地址</td><td><code>http://127.0.0.1:3080</code>（需带 token，见 §3.2）</td></tr><tr><td><strong>本文锁定版本</strong></td><td><strong><code>0.1.5-rc.1</code></strong> —— 安装时须显式指定，见 §2.1</td></tr><tr><td>站点头页</td><td><a href="index.html" target="_blank" rel="noopener">index.html</a> —— 插件说明与全部工具入口</td></tr><tr><td>姊妹篇</td><td><a href="dsh-tui-quick-start.html" target="_blank" rel="noopener">dsh-TUI Quick Start</a> —— 终端 TUI 版上手指南</td></tr></tbody>
 </table>
 </div><p><strong>命令速查</strong></p><div class="code-block">
 <div class="code-head"><span class="dots"><i></i><i></i><i></i></span><span class="lang">sh</span></div>
@@ -1061,10 +1066,10 @@ dsh --profile web --dump-config                  # 查看最终加载内容</cod
 <footer class="doc-footer">
 <div class="f-row">
 <span>来源：DeepSeek Harness（DSH）安装使用手册 · v1.1</span>
-<span>适用：@deepseek-ai/dsh 0.1.2-rc.1 · dsh web</span>
+<span>适用：@deepseek-ai/dsh 0.1.5-rc.1 · dsh web</span>
 <span>更新：2026-09-23</span>
 </div>
-<p class="f-note">本文仅覆盖安装、使用与常见问题处理，不涉及插件开发与源码实现；全部结论基于 0.1.2-rc.1 实测验证。</p>
+<p class="f-note">本文仅覆盖安装、使用与常见问题处理，不涉及插件开发与源码实现；全部结论基于 0.1.5-rc.1 实测验证。</p>
 </footer>
 
 </div>

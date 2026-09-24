@@ -1,7 +1,7 @@
 ---
 title: dsh-workbench · 企业 Agent 工作台
 updated: 2026-09-23
-footer_source: dsh-workbench 站点头页
+footer_source: dsh-workbench 站点首页
 footer_applies: "@lycheelink/dsh-workbench 0.1.2 · DSH Web 插件 · 独立参数采集工具"
 footer_note: 插件在 dsh web 宿主内运行，会话操作以宿主权限为准；采集工具为单文件 HTML，可下载离线使用，生成的 JSON 只在自行复制/下载后才会离开本机。
 ---
@@ -12,7 +12,7 @@ dsh-workbench 站点头页 · 由 scripts/build-doc.py 渲染成 dist/index.html
 -->
 
 ::hero
-eyebrow: DSH Web · 企业 Agent 工作台
+eyebrow: DSH Web · TUI · 企业 Agent 工作台
 
 # dsh-workbench
 
@@ -47,7 +47,7 @@ col **接收端 · dsh-TUI + SKILL** [badge: 提示词消费方]
   采集台的 JSON 配一句触发词就是完整任务指令；粘贴进 dsh-TUI 即可运行。
 ::
 
-> [!note] **想先试插件？**在 dsh web 侧执行 `dsh plugin --profile web add @lycheelink/dsh-workbench`；不装任何东西、只想看交互，先开[Agent 工作台](workbench.html)。
+> [!note] **想先试插件？**安装后在 dsh web 侧操作（`dsh plugin --profile web add @lycheelink/dsh-workbench`）；不装任何东西、只想看交互，先开[Agent 工作台](workbench.html)。
 
 ## 2. 工具与文档
 

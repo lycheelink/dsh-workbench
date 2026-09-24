@@ -56,7 +56,7 @@ card 一句话心智 | DSH 技能**没有注册表文件、没有安装命令、
 ::timeline
 1. **安装** | 安装两个全局包
    ```sh
-   npm i -g @deepseek-ai/dsh @deepseek-harness-tui/dsh-tui
+   npm i -g @deepseek-ai/dsh @deepseek-harness-tui/dsh-tui pnpm
    ```
    以一条命令安装 dsh CLI 与 dsh-tui 插件两个全局包；pnpm 用于首次启动时初始化 profile。
 2. **安装技能** | 以文件复制方式安装
