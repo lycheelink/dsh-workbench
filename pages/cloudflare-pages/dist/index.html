@@ -553,7 +553,11 @@ table td:first-child{color:#fff}
 }
 .doc-footer .f-row{display:flex;flex-wrap:wrap;gap:8px 24px;margin-bottom:12px}
 .doc-footer a{color:var(--text-secondary)}
-.doc-footer .f-note{max-width:70ch;line-height:1.7}
+/* 页脚宽度是三页 footer_note 的折中（13px 字号下浏览器实测，CJK 每字恰 1em）：
+   旧值 70ch(≈612px) 把首页「生成的 JSON」拦腰拆成「生/成」；
+   42.5rem(≈680px) 落在窗口 [669,685)：首页第一行整句止于「生成的 JSON」，
+   且 ≥ 手册页全文宽 608.55、TUI 页 546.17 —— 两者保持单行不回退 */
+.doc-footer .f-note{max-width:42.5rem;line-height:1.7}
 
 /* ══════════════════ 右侧悬浮目录（TOC Rail）· 默认折叠为圆形图标 ══════════════════ */
 .toc-rail{
@@ -638,7 +642,7 @@ section[id]{scroll-margin-top:28px}
 
 <header class="doc-hero">
 <div>
-<span class="eyebrow"><span class="dot"></span>DSH Web · 企业 Agent 工作台</span>
+<span class="eyebrow"><span class="dot"></span>DSH Web · TUI · 企业 Agent 工作台</span>
 <h1><span class="grad">dsh-workbench</span></h1>
 <p class="hero-sub">一套工作台，两种用法：<strong>装成 dsh web 插件</strong>——场景卡片即参数表单，点卡即建真实宿主会话并注入组装好的提示词；<strong>或免安装直接用</strong>——本站托管的独立参数采集工具离线填表，实时产出结构化 JSON 与触发指令，直接粘给 dsh-TUI 触发 SKILL 执行。</p>
 <ul class="hero-meta"><li class="chip">npm @lycheelink/dsh-workbench</li><li class="chip">v0.1.2</li><li class="chip">纯增量注入</li></ul>
@@ -668,7 +672,7 @@ section[id]{scroll-margin-top:28px}
 <p>采集台的 JSON 配一句触发词就是完整任务指令；粘贴进 dsh-TUI 即可运行。</p>
 </div>
 </div><div class="note">
-<p><strong>想先试插件？</strong>在 dsh web 侧执行 <code>dsh plugin --profile web add @lycheelink/dsh-workbench</code>；不装任何东西、只想看交互，先开<a href="workbench.html" target="_blank" rel="noopener">Agent 工作台</a>。</p>
+<p><strong>想先试插件？</strong>安装后在 dsh web 侧操作（<code>dsh plugin --profile web add @lycheelink/dsh-workbench</code>）；不装任何东西、只想看交互，先开<a href="workbench.html" target="_blank" rel="noopener">Agent 工作台</a>。</p>
 </div>
 </section><section id="sec-2" class="sec reveal">
 <div class="sec-head">
@@ -693,7 +697,7 @@ section[id]{scroll-margin-top:28px}
 
 <footer class="doc-footer">
 <div class="f-row">
-<span>来源：dsh-workbench 站点头页</span>
+<span>来源：dsh-workbench 站点首页</span>
 <span>适用：@lycheelink/dsh-workbench 0.1.2 · DSH Web 插件 · 独立参数采集工具</span>
 <span>更新：2026-09-23</span>
 </div>

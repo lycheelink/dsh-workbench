@@ -2,8 +2,8 @@
 title: DSH 安装使用手册
 updated: 2026-09-23
 footer_source: DeepSeek Harness（DSH）安装使用手册 · v1.1
-footer_applies: "@deepseek-ai/dsh 0.1.2-rc.1 · dsh web"
-footer_note: 本文仅覆盖安装、使用与常见问题处理，不涉及插件开发与源码实现；全部结论基于 0.1.2-rc.1 实测验证。
+footer_applies: "@deepseek-ai/dsh 0.1.5-rc.1 · dsh web"
+footer_note: 本文仅覆盖安装、使用与常见问题处理，不涉及插件开发与源码实现；全部结论基于 0.1.5-rc.1 实测验证。
 ---
 
 <!--
@@ -16,11 +16,11 @@ eyebrow: DeepSeek Harness · 面向最终用户
 
 # DSH 安装使用手册
 
-覆盖安装、启动、插件与技能管理、MCP 接入、故障排查与安全备份。核心规则只有一条：**安装与升级都必须显式锁定版本号**——本文以 `0.1.2-rc.1` 为基线，所有命令可直接复制执行。
+覆盖安装、启动、插件与技能管理、MCP 接入、故障排查与安全备份。核心规则只有一条：**安装与升级都必须显式锁定版本号**——本文以 `0.1.5-rc.1` 为基线，所有命令可直接复制执行。
 
 chips: v1.1 · 2026-09-23 · macOS / Node v22.22.2 实测
 
-card 锁定版本 | 宿主 `@deepseek-ai/dsh@0.1.2-rc.1`；插件以 npm 精确版本或 GitHub `#commit` 哈希锁定。
+card 锁定版本 | 宿主 `@deepseek-ai/dsh@0.1.5-rc.1`；插件以 npm 精确版本或 GitHub `#commit` 哈希锁定。
 card 访问方式 | 只认启动日志打印的、带 `?token=` 的完整地址；手输 `127.0.0.1:3080` 会 401。
 card 生效条件 | 安装或卸载**插件**后必须重启 `dsh web`，刷新浏览器无效；**技能**则无需重启。
 ::
@@ -39,13 +39,14 @@ card 生效条件 | 安装或卸载**插件**后必须重启 `dsh web`，刷新�
 1. **安装** | 约 7 分钟 · 勿中断
    ```sh
    # 必须锁定版本号，不要安装最新版
-   npm install -g @deepseek-ai/dsh@0.1.2-rc.1
+   npm install -g @deepseek-ai/dsh@0.1.5-rc.1
    ```
    共引入约 523 个包，属正常现象；完成后核对 `dsh --version`（见 §2.1）。
 2. **安装插件** | 无需 dsh web 运行中
    ```sh
    dsh plugin --profile web add "github:caoyiwei850/dsh-ssh-ops#6fdd0c33869dd9824860eb6295574736b8360634"
    dsh plugin --profile web add "github:lycheelink/dsh-skill-manager.git#f3703dca136bab14032dd5e1ae7d5754bbef7e1a"
+   dsh plugin --profile web add "@lycheelink/dsh-workbench"
    ```
    插件清单与选择建议见 §5.3；`--profile web` 的位置有讲究（见 §5.2）。
 3. **启动** | 在目标工作区目录
@@ -62,7 +63,7 @@ card 生效条件 | 安装或卸载**插件**后必须重启 `dsh web`，刷新�
 
 **安装与使用五条守则**：
 
-1. **安装时须显式指定版本号 `0.1.2-rc.1`**。当前版本迭代频繁且不稳定，请勿安装默认最新版（见 §2.1）；
+1. **安装时须显式指定版本号 `0.1.5-rc.1`**。当前版本迭代频繁且不稳定，请勿安装默认最新版（见 §2.1）；
 2. **使用启动日志中打印的、带 `?token=` 的完整地址访问**，勿自行拼接地址（见 §3.2）；
 3. **安装或卸载插件后须重启 `dsh web`**，仅刷新浏览器不起作用；
 4. **插件安装后须以命令验证其已加载**，不能仅以安装无报错为准（见 §5.5）；
@@ -104,19 +105,19 @@ npm -v
 
 ### 2.1 全局安装（推荐）
 
-> [!warn] **安装时务必携带版本号。**DSH 目前处于快速迭代期，新版本不稳定且可能与插件互不兼容；不带版本号会安装到最新的版本，容易遇到问题。**请统一安装 `0.1.2-rc.1`**，本文所有内容均基于该版本验证。
+> [!warn] **安装时务必携带版本号。**DSH 目前处于快速迭代期，新版本不稳定且可能与插件互不兼容；不带版本号会安装到最新的版本，容易遇到问题。**请统一安装 `0.1.5-rc.1`**，本文所有内容均基于该版本验证。
 
 ```sh
-npm install -g @deepseek-ai/dsh@0.1.2-rc.1
+npm install -g @deepseek-ai/dsh@0.1.5-rc.1
 ```
 
 安装成功时，终端末尾输出类似 `added 523 packages in 7m`。首次安装约需数分钟，耗时较长属正常现象，期间请勿中断。
 
-安装完成后请核对版本号，确认实际安装版本为 `0.1.2-rc.1`：
+安装完成后请核对版本号，确认实际安装版本为 `0.1.5-rc.1`：
 
 ```sh
 dsh --version
-# 预期输出：0.1.2-rc.1
+# 预期输出：0.1.5-rc.1
 # 若版本不符，说明未锁定，请重新执行安装命令
 ```
 
@@ -125,7 +126,7 @@ dsh --version
 ### 2.2 临时体验（不想装进系统）
 
 ```sh
-npx @deepseek-ai/dsh@0.1.2-rc.1 web
+npx @deepseek-ai/dsh@0.1.5-rc.1 web
 ```
 
 该方式按需下载，不写入全局环境，仅适合临时试用：每次执行均需联网解析，且后续插件安装命令较长。如需长期使用，建议采用 §2.1 的全局安装方式（同样须指定版本号）。
@@ -237,7 +238,7 @@ export DSH_HOME=/path/to/your/dsh-home
 
 ### 5.3 推荐插件
 
-> [!note] 版本基线：宿主 `0.1.2-rc.1`，下表版本均于 2026-09-10 实测可用；表中 `...` 为 `dsh plugin --profile web` 的缩写。
+> [!note] 版本基线：宿主 `0.1.5-rc.1`，下表版本均于 2026-09-10 实测可用；表中 `...` 为 `dsh plugin --profile web` 的缩写。
 
 #### 推荐安装（低风险）
 
@@ -248,7 +249,7 @@ export DSH_HOME=/path/to/your/dsh-home
 | `dsh-paste-input` | Ctrl+V 粘贴 / 拖拽文件作为附件 | `... add "github:omdsh-dev/dsh-paste-input#cc02be15"` |
 | `dsh-session-health` | 会话健康检查，防止历史记录损坏丢失 | `... add dsh-session-health@0.6.0` |
 
-> [!note] 0.1.2 宿主已内置 `@` 引用能力且较为完善，安装 `dsh-at-file` 前可先评估原生功能是否满足需求。
+> [!note] 0.1.5 宿主已内置 `@` 引用能力且较为完善，安装 `dsh-at-file` 前可先评估原生功能是否满足需求。
 
 #### 按需安装
 
@@ -529,7 +530,7 @@ tar czf ~/dsh-backup-$(date +%Y%m%d).tar.gz \
 | 数据目录 | `~/.dsh`（Windows：`C:\Users\<用户>\.dsh`） |
 | 技能目录 | `~/.dsh/skills`（ZIP 安装的落点，见 §6） |
 | 默认访问地址 | `http://127.0.0.1:3080`（需带 token，见 §3.2） |
-| **本文锁定版本** | **`0.1.2-rc.1`** —— 安装时须显式指定，见 §2.1 |
+| **本文锁定版本** | **`0.1.5-rc.1`** —— 安装时须显式指定，见 §2.1 |
 | 站点头页 | [index.html](index.html) —— 插件说明与全部工具入口 |
 | 姊妹篇 | [dsh-TUI Quick Start](dsh-tui-quick-start.html) —— 终端 TUI 版上手指南 |
 

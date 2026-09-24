@@ -553,7 +553,11 @@ table td:first-child{color:#fff}
 }
 .doc-footer .f-row{display:flex;flex-wrap:wrap;gap:8px 24px;margin-bottom:12px}
 .doc-footer a{color:var(--text-secondary)}
-.doc-footer .f-note{max-width:70ch;line-height:1.7}
+/* 页脚宽度是三页 footer_note 的折中（13px 字号下浏览器实测，CJK 每字恰 1em）：
+   旧值 70ch(≈612px) 把首页「生成的 JSON」拦腰拆成「生/成」；
+   42.5rem(≈680px) 落在窗口 [669,685)：首页第一行整句止于「生成的 JSON」，
+   且 ≥ 手册页全文宽 608.55、TUI 页 546.17 —— 两者保持单行不回退 */
+.doc-footer .f-note{max-width:42.5rem;line-height:1.7}
 
 /* ══════════════════ 右侧悬浮目录（TOC Rail）· 默认折叠为圆形图标 ══════════════════ */
 .toc-rail{
@@ -689,7 +693,7 @@ section[id]{scroll-margin-top:28px}
 <p class="t-title"><strong>安装</strong><span class="step-tag">安装两个全局包</span></p>
 <div class="code-block">
 <div class="code-head"><span class="dots"><i></i><i></i><i></i></span><span class="lang">sh</span></div>
-<pre><code>npm i -g @deepseek-ai/dsh @deepseek-harness-tui/dsh-tui</code></pre>
+<pre><code>npm i -g @deepseek-ai/dsh @deepseek-harness-tui/dsh-tui pnpm</code></pre>
 </div><p class="t-body">以一条命令安装 dsh CLI 与 dsh-tui 插件两个全局包；pnpm 用于首次启动时初始化 profile。</p>
 </li>
 <li>
