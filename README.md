@@ -97,7 +97,7 @@ npm run sync:artifact   # 刷新插件内嵌副本（幂等剥离 builder node-i
 
 ## Publishing to npm
 
-`@lycheelink/dsh-workbench` is published to [npm](https://www.npmjs.com/package/@lycheelink/dsh-workbench) from GitHub Actions on a version tag. Pushing a `vX.Y.Z` tag whose version equals `package.json` version triggers `.github/workflows/publish.yml`, which runs the full gate (tag ↔ version check → `npm ci` → `npm run build` → `npm test` → `npm pack` + artifact validation) and publishes the validated tarball to registry.npmjs.org with a sigstore provenance statement.
+`@lycheelink/dsh-workbench` is published to [npm](https://www.npmjs.com/package/@lycheelink/dsh-workbench) from GitHub Actions on a version tag. Pushing a `vX.Y.Z` tag whose version equals `package.json` version triggers `.github/workflows/publish.yml`, which runs the full gate (tag ↔ version check → `npm ci` → `npm run build` → `npm test` → `npm pack` + artifact validation) and publishes the validated tarball to registry.npmjs.org. Authentication uses **npm trusted publishing (GitHub Actions OIDC)** — no long-lived npm token is stored — and npm automatically emits a sigstore provenance statement for the public package.
 
 ```bash
 npm version patch -m "chore: release %s"  # bumps package.json + package-lock.json, creates commit + tag
@@ -108,7 +108,7 @@ git push origin v0.1.4                     # ← this push triggers the action
 
 - **dist-tag semantics**: stable versions (no `-` prerelease suffix) publish to `latest`; prereleases (e.g. `0.1.2-alpha.0`, via `npm version prerelease --preid alpha`) publish to `next`.
 - The tag must equal `v{package.json.version}` exactly or the workflow aborts at the first step.
-- Requires the `NODE_AUTH_TOKEN` **org-level** GitHub Actions secret — a granular npm token with **Bypass 2FA** enabled (the npm account requires 2FA for publish; CI cannot answer OTP). `--provenance` additionally requires the repo to be **public**.
+- Requires an npm **Trusted Publisher** for `lycheelink/dsh-workbench`, workflow filename `publish.yml`, with the `npm publish` action allowed. The workflow must keep `permissions: id-token: write`; it runs on Node 24 so the bundled npm satisfies trusted publishing's `>=11.5.1` requirement.
 - Versions must be new: npm rejects re-publishing an existing version, and the workflow refuses to move `latest` backwards.
 
 ## Slot Injections
