@@ -9,8 +9,10 @@ name: publish
 # - Stable versions (no `-` prerelease suffix) go to `latest`;
 #   prereleases go to `next`.
 # - Authentication uses npm trusted publishing (GitHub Actions OIDC); no
-#   long-lived NODE_AUTH_TOKEN is involved. npm automatically emits a
-#   sigstore provenance statement for public repos + public packages.
+#   long-lived NODE_AUTH_TOKEN is involved. The workflow exchanges the
+#   GitHub id-token for a package-scoped short-lived npm token and publishes
+#   with that token (npm's own OIDC path currently returns ENEEDAUTH).
+#   This path does not emit a provenance attestation.
 # - Requires an npm Trusted Publisher configured for lycheelink/dsh-workbench
 #   with workflow filename `publish.yml` and the `npm publish` action allowed.
 
