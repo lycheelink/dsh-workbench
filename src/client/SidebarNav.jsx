@@ -41,18 +41,39 @@ const NAV_ICON = `
  *
  * Returns { root, region } where `root` is the sidebar content container and
  * `region` the workspace region the nav button is inserted in front of.
+ *
+ * The "工作区" label is only rendered when the sidebar is wide enough to show
+ * section labels. When the app starts with its rail collapsed (narrow window)
+ * the label is absent, so fall back to the region container itself — otherwise
+ * the nav would never be inserted at all.
  */
 function findSidebarRoot() {
   const label = [...document.querySelectorAll("span")].find(
     (s) => s.textContent?.trim() === "工作区" || s.textContent?.trim() === "Workspaces"
   );
-  if (!label) return null;
-  const wsSection = label.closest('[class*="root"]');
-  if (!wsSection) return null;
-  const region = wsSection.closest('[class*="regionArea"]') ?? wsSection.parentElement;
-  const root = region?.closest('[class*="root"]') ?? region?.parentElement;
-  if (!root) return null;
-  return { root, region };
+  if (label) {
+    const wsSection = label.closest('[class*="root"]');
+    const region = wsSection?.closest('[class*="regionArea"]') ?? wsSection?.parentElement;
+    const root = region?.closest('[class*="root"]') ?? region?.parentElement;
+    if (root) return { root, region };
+  }
+
+  // Collapsed-rail fallback: no section label, but the region container is
+  // still mounted inside the sidebar column.
+  const col = document.querySelector(SIDEBAR_COL_SELECTOR);
+  const region = col?.querySelector('[class*="regionArea"]') ?? document.querySelector('[class*="regionArea"]');
+  if (region) {
+    const root = region.closest('[class*="root"]') ?? region.parentElement;
+    if (root) return { root, region };
+  }
+
+  // Last resort: append to the sidebar column root so the entry still exists
+  // even if the host omits the region container entirely.
+  if (col) {
+    const root = col.querySelector('[class*="root"]') ?? col.firstElementChild;
+    if (root) return { root, region: null };
+  }
+  return null;
 }
 
 function makeNavButton(t) {
