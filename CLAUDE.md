@@ -82,7 +82,7 @@ Non-obvious invariants here:
 
 `index.jsx` mounts the Remote contribution via `ctx.remote.$mount(TYPERT_REMOTE)`, registers `zh`/`en` locale keys under `NS = "workbench"`, and injects into three slots:
 
-- `shell.overlay` order 95 → `SidebarNav` — the "工作台" nav entry. **The host re-renders its sidebar React tree constantly**, so this owns a real DOM `<button>` through a `MutationObserver`, locating the "工作区" section by text + class names rather than one stable selector.
+- `shell.overlay` order 95 → `SidebarNav` — the "工作台" nav entry. **The host re-renders its sidebar React tree constantly**, so this owns a real DOM `<button>` through a `MutationObserver`, locating the "工作区" section by text + class names rather than one stable selector. On a collapsed sidebar rail the "工作区" label is not rendered at all, so it falls back to the region container (and finally the sidebar column root) before giving up — without that fallback the nav never mounts when the app starts narrow.
 - `shell.overlay` order 90 → `WorkbenchPanel` — the full-page workbench. Always mounted; `ui.open` only toggles CSS visibility so in-flight form input and control-room scroll survive navigation away and back. Positions itself over the center column by tracking sidebar width with a `ResizeObserver`. While open it sets `data-dsh-workbench-page-open` on `<html>` so the covered columns drop out of the a11y/keyboard tree.
 - `settings.plugins.tab` order 85 → `WorkbenchSettingsTab` (card management placeholder).
 

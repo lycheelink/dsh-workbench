@@ -97,18 +97,18 @@ npm run sync:artifact   # 刷新插件内嵌副本（幂等剥离 builder node-i
 
 ## Publishing to npm
 
-`@lycheelink/dsh-workbench` is published to [npm](https://www.npmjs.com/package/@lycheelink/dsh-workbench) from GitHub Actions on a version tag. Pushing a `vX.Y.Z` tag whose version equals `package.json` version triggers `.github/workflows/publish.yml`, which runs the full gate (tag ↔ version check → `npm ci` → `npm run build` → `npm test` → `npm pack` + artifact validation) and publishes the validated tarball to registry.npmjs.org. Authentication uses **npm trusted publishing (GitHub Actions OIDC)** — no long-lived npm token is stored — and npm automatically emits a sigstore provenance statement for the public package.
+`@lycheelink/dsh-workbench` is published to [npm](https://www.npmjs.com/package/@lycheelink/dsh-workbench) from GitHub Actions on a version tag. Pushing a `vX.Y.Z` tag whose version equals `package.json` version triggers `.github/workflows/publish.yml`, which runs the full gate (tag ↔ version check → `npm ci` → `npm run build` → `npm test` → `npm pack` + artifact validation) and publishes the validated tarball to registry.npmjs.org. Authentication uses **npm trusted publishing (GitHub Actions OIDC)** — no long-lived npm token is stored. The workflow exchanges the GitHub id-token for a package-scoped short-lived npm token and publishes with that token; this path does not currently emit a provenance attestation.
 
 ```bash
 npm version patch -m "chore: release %s"  # bumps package.json + package-lock.json, creates commit + tag
 # keep dsh.plugin.json version in sync (npm version does not touch it)
 git push origin main
-git push origin v0.1.4                     # ← this push triggers the action
+git push origin v0.1.5                     # ← this push triggers the action
 ```
 
 - **dist-tag semantics**: stable versions (no `-` prerelease suffix) publish to `latest`; prereleases (e.g. `0.1.2-alpha.0`, via `npm version prerelease --preid alpha`) publish to `next`.
 - The tag must equal `v{package.json.version}` exactly or the workflow aborts at the first step.
-- Requires an npm **Trusted Publisher** for `lycheelink/dsh-workbench`, workflow filename `publish.yml`, with the `npm publish` action allowed. The workflow must keep `permissions: id-token: write`; it runs on Node 24, upgrades to npm 11.21.0, and explicitly sets the registry. Do **not** set `registry-url` on `actions/setup-node` — it injects a placeholder `NODE_AUTH_TOKEN` into `GITHUB_ENV`, which makes npm skip the OIDC exchange and fall back to token auth.
+- Requires an npm **Trusted Publisher** for `lycheelink/dsh-workbench`, workflow filename `publish.yml`, with the `npm publish` action allowed. The workflow must keep `permissions: id-token: write`; it runs on Node 24, upgrades to npm 11.21.0, and explicitly sets the registry. Do **not** set `registry-url` on `actions/setup-node` — it injects a placeholder `NODE_AUTH_TOKEN` into `GITHUB_ENV`, which makes npm skip the OIDC exchange and fall back to token auth. Because npm's own OIDC path still reports `ENEEDAUTH`, the workflow performs the OIDC token exchange itself and publishes with the resulting short-lived token.
 - Versions must be new: npm rejects re-publishing an existing version, and the workflow refuses to move `latest` backwards.
 
 ## Slot Injections
