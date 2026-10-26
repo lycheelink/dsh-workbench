@@ -111,7 +111,7 @@
 
 <main>
   <p class="intro">
-    三个场景 <strong>Skill</strong> 的参数配置操作台：在控制台完成参数配置、实时生成结构化 JSON，
+    四个场景 <strong>Skill</strong> 的参数配置操作台：在控制台完成参数配置、实时生成结构化 JSON，
     复制触发指令后到 <strong>dsh TUI</strong> 粘贴启动 Skill 会话。无需后端，随开随用。
   </p>
 
@@ -139,7 +139,7 @@
 "use strict";
 // ── 固定卡片（新增场景卡片时在此追加一项即可） ──────────────────────────────
 // 每项：{ id, title, description, icon, category, consoleUrl }
-//   icon       → "shield-check" | "chart-bar" | "document-text"（可扩展 ICONS）
+//   icon       → "shield-check" | "chart-bar" | "document-text" | "bolt"（可扩展 ICONS）
 //   category   → 决定 icon tile 配色（见 CATEGORY_COLORS，缺省取品牌蓝）
 //   consoleUrl → 卡片打开的控制台独立页
 const CARDS = [
@@ -166,6 +166,14 @@ const CARDS = [
     icon: "document-text",
     consoleUrl: "veriflow-params.html",
     description: "面向 LLM 推理服务的验证流框架：按声明式 YAML 配置自动启动 vLLM 推理服务（本地或 SSH 跨节点，支持多机数据并行与 PD 分离），运行精度 / 性能 / 长稳测试（vllm bench、lm-eval、evalscope），并与验收标准逐条比对，产出通过/失败全景报告（veriflow_report.md + veriflow_summary.json）。"
+  },
+  {
+    id: "aiperf",
+    title: "AIPerf 压测",
+    category: "测试",
+    icon: "bolt",
+    consoleUrl: "aiperf-params.html",
+    description: "NVIDIA AIPerf 生成式 AI 推理压测：支持并发饱和 / 速率驱动 / 并发爬坡三种负载模型，按 ISL/OSL 或真实数据集发压，采集 TTFT、ITL、吞吐与 goodput，产出结构化产物并分析瓶颈。"
   }
 ];
 
@@ -173,7 +181,8 @@ const CATEGORY_COLORS = { "寻优": "#2d6cdf", "测试": "#2e9e5b", "通用": "#
 const ICONS = {
   "shield-check": '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>',
   "chart-bar": '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>',
-  "document-text": '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>'
+  "document-text": '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>',
+  "bolt": '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>'
 };
 
 // ── 渲染 ────────────────────────────────────────────────────────────────

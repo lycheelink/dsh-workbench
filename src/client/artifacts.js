@@ -11,11 +11,13 @@
 import modelOobPerfOptimizeHtml from "./artifacts/model-oob-perf-optimize.html";
 import ascendProfilerHtml from "./artifacts/ascend-profiler.html";
 import veriflowHtml from "./artifacts/veriflow.html";
+import aiperfHtml from "./artifacts/aiperf.html";
 
 export const ARTIFACTS = {
   "model-oob-perf-optimize": modelOobPerfOptimizeHtml,
   "ascend-profiler": ascendProfilerHtml,
-  "veriflow": veriflowHtml
+  "veriflow": veriflowHtml,
+  "aiperf": aiperfHtml
 };
 
 /** postMessage namespace spoken between the shell and embedded consoles. */

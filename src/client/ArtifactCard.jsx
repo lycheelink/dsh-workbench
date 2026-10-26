@@ -1,13 +1,13 @@
 /**
  * ArtifactCard: renders a vendored standalone HTML console (the model-oob
  * "寻优参数采集台" / ascend-profiler "Profiling 参数采集台" / veriflow
- * "验证流测试台") inside a sandboxed srcDoc iframe and bridges its state to
- * the workbench shell over postMessage.
+ * "验证流测试台" / aiperf "AIPerf 压测台") inside a sandboxed srcDoc iframe
+ * and bridges its state to the workbench shell over postMessage.
  *
  * The console is dual-mode (it also runs standalone on Cloudflare Pages). In
  * embed mode the shell prepends a one-line script that sets
  * window.__DASH_EMBED__ = true, so the page hides its site-level header/footer
- * and the chat-paste trigger button, shows the embed-only「启动寻优」button, drops
+ * and the chat-paste trigger button, shows the embed-only launch button, drops
  * its width cap, and reports through the bridge:
  *
  *   { bridge, kind: "state",  json, ready, warns }  — on every form change
@@ -34,6 +34,7 @@ import { ARTIFACT_BRIDGE } from "./artifacts.js";
 const EMBED_BOOTSTRAP = `<script>window.__DASH_EMBED__=true</scr${"ipt"}>`;
 
 export function ArtifactCard({ html, onState, onLaunch, title = "" }) {
+  const iframeRef = React.useRef(null);
   const srcDoc = React.useMemo(
     () => EMBED_BOOTSTRAP + html,
     [html]
@@ -42,6 +43,8 @@ export function ArtifactCard({ html, onState, onLaunch, title = "" }) {
   React.useEffect(() => {
     const onMessage = (event) => {
       if (!event.data || event.data.bridge !== ARTIFACT_BRIDGE) return;
+      // Only the active console may drive this card's state / launch.
+      if (iframeRef.current && event.source !== iframeRef.current.contentWindow) return;
       if (event.data.kind === "state") {
         onState?.({ json: event.data.json, ready: !!event.data.ready });
       } else if (event.data.kind === "launch") {
@@ -53,15 +56,18 @@ export function ArtifactCard({ html, onState, onLaunch, title = "" }) {
   }, [onState, onLaunch]);
 
   // Belt-and-suspenders: the console posts its first "state" during its own
-  // init, but a pull on load covers the case the shell's listener attaches
-  // after the page's first render.
+  // init, but the shell's listener may attach after that. A pull delivered
+  // INTO the iframe (its contentWindow, not the host window) makes the page
+  // re-post its current state.
   const pull = React.useCallback(() => {
-    window.postMessage({ bridge: ARTIFACT_BRIDGE, kind: "pull" }, "*");
+    const win = iframeRef.current?.contentWindow;
+    if (win) win.postMessage({ bridge: ARTIFACT_BRIDGE, kind: "pull" }, "*");
   }, []);
 
   return (
     <div className="dsh-wb-artifact">
       <iframe
+        ref={iframeRef}
         title={title || "参数采集台"}
         srcDoc={srcDoc}
         sandbox="allow-scripts allow-same-origin allow-downloads"

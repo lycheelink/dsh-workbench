@@ -299,5 +299,66 @@ export const BUILTIN_CARDS = [
       allowedTools: ["file_read", "bash", "python_exec"],
       skills: ["veriflow"]
     }
+  },
+  {
+    id: "aiperf",
+    title: "AIPerf 压测",
+    description: "NVIDIA AIPerf 生成式 AI 推理压测：支持并发饱和 / 速率驱动 / 并发爬坡三种负载模型，按 ISL/OSL 或真实数据集发压，采集 TTFT、ITL、吞吐与 goodput，产出结构化产物并分析瓶颈。",
+    icon: "bolt",
+    category: "测试",
+    formSchema: [
+      {
+        key: "model",
+        label: "模型名称",
+        type: "text",
+        required: true,
+        placeholder: "如 Qwen/Qwen3-0.6B",
+        description: "-m/--model，须与服务端注册名一致"
+      },
+      {
+        key: "url",
+        label: "服务地址",
+        type: "text",
+        required: true,
+        placeholder: "如 http://localhost:8000",
+        description: "-u/--url，AIPerf 会自动补 http://"
+      },
+      {
+        key: "endpoint_type",
+        label: "端点类型",
+        type: "select",
+        required: false,
+        options: [
+          { label: "chat（默认）", value: "chat" },
+          { label: "completions", value: "completions" },
+          { label: "responses", value: "responses" },
+          { label: "embeddings", value: "embeddings" },
+          { label: "image_generation", value: "image_generation" },
+          { label: "audio_transcription", value: "audio_transcription" }
+        ],
+        description: "--endpoint-type；完整 19 种取值见压测台"
+      },
+      {
+        key: "request_count",
+        label: "请求数",
+        type: "text",
+        required: false,
+        placeholder: "如 200",
+        description: "--request-count；停止条件（也可用压测时长）"
+      },
+      {
+        key: "output_artifact_dir",
+        label: "产物根目录",
+        type: "text",
+        required: false,
+        placeholder: "默认 artifacts",
+        description: "--output-artifact-dir；JSON / CSV / 日志输出位置"
+      }
+    ],
+    agentConfig: {
+      preset: "aiperf",
+      systemPrompt: "你是一名生成式 AI 推理性能压测助手，负责执行 AIPerf 基准测试、读取产物并给出结论。严格按用户提交的结构化 JSON（尤其是其中的 command）执行，不擅自更改模型、端点、负载模型与停止条件；只有环境缺失时才做最小修复，并在报告中说明。先确认 aiperf 可用；非 TTY 环境保持 --ui-type none。执行后从产物目录读取 profile_export_aiperf.json / .csv、profile_export.jsonl 与 logs/aiperf.log，报告实际命令、请求数与成功率、吞吐（req/s、output tokens/s）、TTFT / ITL / 请求延迟的 avg 与 p50/p90/p99、goodput 与错误；最后给出 2~4 条基于数据的瓶颈判断和下一轮实验建议，不要编造未采集的指标。全程用中文。",
+      allowedTools: ["bash", "file_read", "python_exec"]
+    }
   }
 ];

@@ -1,12 +1,12 @@
 /**
- * Sync the vendored artifact consoles (寻优参数采集台 / Profiling 参数采集台 —
- * dual-mode standalone HTML) from their canonical repo source into the client
- * bundle as imported artifacts, stripping builder node-id noise (idempotent —
- * canonical pages/cloudflare-pages/dist/*.html are already clean).
+ * Sync the vendored artifact consoles (parameter consoles — dual-mode
+ * standalone HTML) from their canonical repo source into the client bundle as
+ * imported artifacts, stripping builder node-id noise (idempotent — canonical
+ * pages/cloudflare-pages/dist/*.html are already clean).
  *
  * Usage: node scripts/sync-artifact.mjs [cardId] [src.html]
  *   With no args: sync every artifact in SOURCES.
- *   With a cardId ("model-oob-perf-optimize" | "ascend-profiler" | "veriflow"):
+ *   With a cardId ("model-oob-perf-optimize" | "ascend-profiler" | "veriflow" | "aiperf"):
  *     sync just that one. A bare path as the first arg still works for the
  *     default card (legacy single-source mode).
  *
@@ -38,6 +38,10 @@ const SOURCES = {
   "veriflow": {
     src: resolve(distDir, "veriflow-params.html"),
     out: "veriflow.html"
+  },
+  "aiperf": {
+    src: resolve(distDir, "aiperf-params.html"),
+    out: "aiperf.html"
   }
 };
 const DEFAULT_CARD = "model-oob-perf-optimize";
