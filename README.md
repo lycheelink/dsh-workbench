@@ -108,7 +108,7 @@ git push origin v0.1.4                     # ← this push triggers the action
 
 - **dist-tag semantics**: stable versions (no `-` prerelease suffix) publish to `latest`; prereleases (e.g. `0.1.2-alpha.0`, via `npm version prerelease --preid alpha`) publish to `next`.
 - The tag must equal `v{package.json.version}` exactly or the workflow aborts at the first step.
-- Requires an npm **Trusted Publisher** for `lycheelink/dsh-workbench`, workflow filename `publish.yml`, with the `npm publish` action allowed. The workflow must keep `permissions: id-token: write`; it runs on Node 24 so the bundled npm satisfies trusted publishing's `>=11.5.1` requirement.
+- Requires an npm **Trusted Publisher** for `lycheelink/dsh-workbench`, workflow filename `publish.yml`, with the `npm publish` action allowed. The workflow must keep `permissions: id-token: write`; it runs on Node 24 so the bundled npm satisfies trusted publishing's `>=11.5.1` requirement. Do **not** set `registry-url` on `actions/setup-node` — it injects a placeholder `NODE_AUTH_TOKEN` into `GITHUB_ENV`, which makes npm skip the OIDC exchange and fall back to token auth.
 - Versions must be new: npm rejects re-publishing an existing version, and the workflow refuses to move `latest` backwards.
 
 ## Slot Injections
