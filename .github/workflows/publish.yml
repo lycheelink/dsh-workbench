@@ -8,10 +8,11 @@ name: publish
 #
 # - Stable versions (no `-` prerelease suffix) go to `latest`;
 #   prereleases go to `next`.
-# - `--provenance` attaches a sigstore-signed provenance statement; it
-#   requires GitHub Actions OIDC, which only verifies for PUBLIC repos.
-# - Requires a repo secret `NODE_AUTH_TOKEN`: a granular npm token with
-#   read+write on the @lycheelink/dsh-workbench package.
+# - Authentication uses npm trusted publishing (GitHub Actions OIDC); no
+#   long-lived NODE_AUTH_TOKEN is involved. npm automatically emits a
+#   sigstore provenance statement for public repos + public packages.
+# - Requires an npm Trusted Publisher configured for lycheelink/dsh-workbench
+#   with workflow filename `publish.yml` and the `npm publish` action allowed.
 
 on:
   push:
@@ -34,9 +35,15 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          # Trusted publishing requires Node >=22.14 and npm >=11.5.1.
+          node-version: 24
           registry-url: https://registry.npmjs.org
           cache: npm
+
+      - name: Print toolchain versions
+        run: |
+          node --version
+          npm --version
 
       - name: Verify tag equals package.json version
         run: |
@@ -103,15 +110,12 @@ jobs:
             fi
           fi
 
-      - name: Publish to npm
+      - name: Publish to npm (OIDC trusted publishing)
         run: |
           npm publish "$RUNNER_TEMP/pkg.tgz" \
             --tag "${{ steps.dist-tag.outputs.dist-tag }}" \
-            --provenance \
             --access public \
             --registry https://registry.npmjs.org
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NODE_AUTH_TOKEN }}
 
       - name: Verify published version and dist-tag
         run: |
