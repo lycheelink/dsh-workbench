@@ -63,7 +63,10 @@ jobs:
           fi
 
       - name: Install deps
-        run: npm ci
+        # npm 12 defaults allow-remote=none; package-lock resolves the
+        # @deepseek-ai tarballs from mirrors.huaweicloud.com (a different
+        # origin than the configured registry), which needs an explicit allow.
+        run: npm ci --allow-remote=all
 
       - name: Build host + client
         run: npm run build
