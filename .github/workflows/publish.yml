@@ -148,11 +148,44 @@ jobs:
 
       - name: Publish to npm (OIDC trusted publishing)
         run: |
-          npm publish "$RUNNER_TEMP/pkg.tgz" \
-            --tag "${{ steps.dist-tag.outputs.dist-tag }}" \
-            --provenance \
-            --access public \
-            --registry https://registry.npmjs.org
+          set -euo pipefail
+          BODY="$(mktemp)"
+          NPMRC="$(mktemp)"
+          trap 'rm -f "$BODY" "$NPMRC"' EXIT
+          chmod 600 "$NPMRC"
+
+          IDTOK="$(curl -fsS -H "Authorization: bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" \
+            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=npm:registry.npmjs.org" | jq -r '.value // empty')"
+          if [ -z "$IDTOK" ]; then
+            echo "GitHub did not issue an OIDC id-token"
+            exit 1
+          fi
+
+          HTTP="$(curl -sS -o "$BODY" -w '%{http_code}' -X POST \
+            -H "Authorization: Bearer ${IDTOK}" \
+            "https://registry.npmjs.org/-/npm/v1/oidc/token/exchange/package/@lycheelink%2Fdsh-workbench")"
+          if [[ "$HTTP" != 2* ]]; then
+            echo "OIDC exchange refused: HTTP ${HTTP} — $(jq -r '.message // .error // "unknown"' "$BODY" 2>/dev/null || echo unreadable)"
+            exit 1
+          fi
+
+          TOKEN="$(jq -r '.token // .authToken // .access_token // empty' "$BODY")"
+          if [ -z "$TOKEN" ]; then
+            echo "OIDC exchange succeeded but returned no publish token (keys: $(jq -r 'keys|join(",")' "$BODY"))"
+            exit 1
+          fi
+
+          # Publish with the short-lived token minted from the GitHub OIDC
+          # exchange. npm 11.21.0 still falls back to ENEEDAUTH on its own OIDC
+          # path, so drive the exchange explicitly and keep the token off the
+          # command line / logs.
+          printf '//registry.npmjs.org/:_authToken=%s\nregistry=https://registry.npmjs.org/\n' "$TOKEN" > "$NPMRC"
+          env -u ACTIONS_ID_TOKEN_REQUEST_URL -u ACTIONS_ID_TOKEN_REQUEST_TOKEN \
+            NPM_CONFIG_USERCONFIG="$NPMRC" \
+            npm publish "$RUNNER_TEMP/pkg.tgz" \
+              --tag "${{ steps.dist-tag.outputs.dist-tag }}" \
+              --access public \
+              --registry https://registry.npmjs.org
 
       - name: Verify published version and dist-tag
         run: |
