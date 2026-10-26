@@ -11,7 +11,7 @@
  *   - TYPERT host manifest shape (the typert-loader boundary)
  */
 import assert from "node:assert/strict";
-import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
+import { mkdtempSync, writeFileSync, rmSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { Service } from "@deepseek-ai/cordis";
@@ -260,6 +260,64 @@ const vfArtRecord = serviceVfArt.sessionStore.get(result.value.session.sessionId
 assert.match(vfArtRecord.prompt, /```json/, "veriflow artifact prompt embeds a JSON code block");
 assert.match(vfArtRecord.prompt, /"run_mode": "run"/, "veriflow prompt carries the console JSON");
 assert.equal("formData" in result.value.session, false, "veriflow wire session must not carry formData");
+
+// Fourth artifact card (aiperf AIPerf 压测台): same contract, and the console
+// ships a ready-to-run command inside its structured output.
+const aiperfArtifactCard = {
+  id: "aiperf",
+  title: "AIPerf 压测",
+  description: "d",
+  icon: "x",
+  category: "测试",
+  formSchema: [], // artifact cards carry no DynamicForm schema
+  agentConfig: { preset: "aiperf", systemPrompt: "SP", allowedTools: ["bash"], skills: ["s"] }
+};
+const serviceAfArt = makeService();
+serviceAfArt.cardCache.set("aiperf", aiperfArtifactCard);
+
+result = await serviceAfArt.launchCardSession({ cardId: "aiperf", formData: { perfConfig: [] } });
+assert.equal(result.ok, false, "aiperf artifact card with non-object perfConfig must fail");
+assert.equal(result.error.code, "validation-error");
+
+const aiperfPerfConfig = {
+  tool: "aiperf",
+  endpoint: { model: "Qwen/Qwen3-0.6B", url: "http://localhost:8000", endpoint_type: "chat", streaming: true },
+  load: { mode: "concurrency", concurrency: 32 },
+  stop: { mode: "request_count", request_count: 200 },
+  dataset: { source: "synthetic", isl: 550, osl: 256, num_dataset_entries: 100 },
+  advanced: { output_artifact_dir: "artifacts", ui_type: "none" },
+  command: "aiperf profile --model Qwen/Qwen3-0.6B --url http://localhost:8000 --concurrency 32 --request-count 200"
+};
+result = await serviceAfArt.launchCardSession({ cardId: "aiperf", formData: { perfConfig: aiperfPerfConfig } });
+assert.equal(result.ok, true, "aiperf artifact card with valid perfConfig passes without formSchema fields");
+const afArtRecord = serviceAfArt.sessionStore.get(result.value.session.sessionId);
+assert.match(afArtRecord.prompt, /```json/, "aiperf artifact prompt embeds a JSON code block");
+assert.match(afArtRecord.prompt, /"tool": "aiperf"/, "aiperf prompt carries the console JSON");
+assert.match(afArtRecord.prompt, /"command": "aiperf profile --model Qwen\/Qwen3-0.6B/, "aiperf prompt carries the generated command");
+assert.match(afArtRecord.prompt, /参数采集台结构化输出/, "artifact prompt uses the generic console heading");
+assert.equal("formData" in result.value.session, false, "aiperf wire session must not carry formData");
+
+// The built-in card must stay wired to the artifact branch, and the vendored
+// console must stay byte-identical to its canonical pages source.
+const builtinAiperf = BUILTIN_CARDS.find((c) => c.id === "aiperf");
+assert.ok(builtinAiperf !== undefined, "built-in aiperf card exists");
+assert.equal(builtinAiperf.category, "测试", "aiperf is a testing card");
+assert.equal(builtinAiperf.icon, "bolt", "aiperf uses the bolt icon");
+assert.equal(builtinAiperf.agentConfig.preset, "aiperf", "aiperf card preset");
+assert.ok(builtinAiperf.formSchema.some((f) => f.key === "model"), "aiperf formSchema documents the model field");
+
+const aiperfCanonical = readFileSync(
+  new URL("../pages/cloudflare-pages/dist/aiperf-params.html", import.meta.url),
+  "utf8"
+);
+const aiperfVendored = readFileSync(
+  new URL("../src/client/artifacts/aiperf.html", import.meta.url),
+  "utf8"
+);
+assert.equal(aiperfVendored, aiperfCanonical, "vendored aiperf console is byte-identical to the canonical page");
+assert.match(aiperfVendored, /dsh-wb:artifact/, "aiperf console speaks the artifact bridge");
+assert.match(aiperfVendored, /cardId\s*:\s*['"]aiperf['"]/, "aiperf console identifies itself on the bridge");
+assert.match(aiperfVendored, /aiperf profile/, "aiperf console previews the generated command");
 
 // ── launchRealSession via sessionController (F3) ─────────────────────────────
 

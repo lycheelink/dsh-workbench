@@ -645,10 +645,10 @@ section[id]{scroll-margin-top:28px}
 <span class="eyebrow"><span class="dot"></span>DSH Web · TUI · 企业 Agent 工作台</span>
 <h1><span class="grad">dsh-workbench</span></h1>
 <p class="hero-sub">一套工作台，两种用法：<strong>装成 dsh web 插件</strong>——场景卡片即参数表单，点卡即建真实宿主会话并注入组装好的提示词；<strong>或免安装直接用</strong>——本站托管的独立参数采集工具离线填表，实时产出结构化 JSON 与触发指令，直接粘给 dsh-TUI 触发 SKILL 执行。</p>
-<ul class="hero-meta"><li class="chip">npm @lycheelink/dsh-workbench</li><li class="chip">v0.1.2</li><li class="chip">纯增量注入</li></ul>
+<ul class="hero-meta"><li class="chip">npm @lycheelink/dsh-workbench</li><li class="chip">v0.1.4</li><li class="chip">纯增量注入</li></ul>
 </div>
 <div class="hero-side">
-<div class="mini"><span class="k">插件形态</span><span class="v">侧栏「工作台」入口 + 整页场景卡 + 控制房监控，不替换任何官方插件；启动的会话在宿主会话列表中可见。</span></div><div class="mini"><span class="k">工具形态</span><span class="v">三个参数采集台（寻优 / Profiling / 验证流）+ 工作台在线预览，全部为单文件 HTML，支持离线使用。</span></div><div class="mini"><span class="k">文档</span><span class="v">宿主安装看 <a href="dsh-quick-start.html" target="_blank" rel="noopener">DSH Quick Start</a>，终端上手看 <a href="dsh-tui-quick-start.html" target="_blank" rel="noopener">dsh-TUI Quick Start</a>。</span></div>
+<div class="mini"><span class="k">插件形态</span><span class="v">侧栏「工作台」入口 + 整页场景卡 + 控制房监控，不替换任何官方插件；启动的会话在宿主会话列表中可见。</span></div><div class="mini"><span class="k">工具形态</span><span class="v">四个参数采集台（寻优 / Profiling / 验证流 / AIPerf）+ 工作台在线预览，全部为单文件 HTML，支持离线使用。</span></div><div class="mini"><span class="k">文档</span><span class="v">宿主安装看 <a href="dsh-quick-start.html" target="_blank" rel="noopener">DSH Quick Start</a>，终端上手看 <a href="dsh-tui-quick-start.html" target="_blank" rel="noopener">dsh-TUI Quick Start</a>。</span></div>
 </div>
 </header><section id="sec-1" class="sec reveal">
 <div class="sec-head">
@@ -668,7 +668,7 @@ section[id]{scroll-margin-top:28px}
 </div>
 <div class="col">
 <p class="c-name">接收端 · dsh-TUI + SKILL<span class="badge">提示词消费方</span></p>
-<div class="kv"><span class="k">宿主</span><span class="v">dsh-TUI（社区 TUI 插件）</span></div><div class="kv"><span class="k">技能</span><span class="v">model-oob-perf-optimize 等</span></div><div class="kv"><span class="k">文档</span><span class="v"><a href="dsh-tui-quick-start.html" target="_blank" rel="noopener">dsh-TUI Quick Start</a></span></div>
+<div class="kv"><span class="k">宿主</span><span class="v">dsh-TUI（社区 TUI 插件）</span></div><div class="kv"><span class="k">技能</span><span class="v">model-oob-perf-optimize 等（AIPerf 卡自包含执行提示词）</span></div><div class="kv"><span class="k">文档</span><span class="v"><a href="dsh-tui-quick-start.html" target="_blank" rel="noopener">dsh-TUI Quick Start</a></span></div>
 <p>采集台的 JSON 配一句触发词就是完整任务指令；粘贴进 dsh-TUI 即可运行。</p>
 </div>
 </div><div class="note">
@@ -678,9 +678,9 @@ section[id]{scroll-margin-top:28px}
 <div class="sec-head">
 <span class="sec-num">SECTION 02</span>
 <h2>2. 工具与文档</h2>
-<p class="desc">六个入口：三个参数采集台、一个Agent 工作台、两份 quick-start 手册。</p></div>
+<p class="desc">七个入口：四个参数采集台、一个Agent 工作台、两份 quick-start 手册。</p></div>
 <div class="grid2">
-<div class="tile"><span class="t-k"><a href="perf-optimize-params.html" target="_blank" rel="noopener">寻优参数采集台</a></span><p class="t-d">部署拓扑、业务建模、寻优需求一次采齐，输出可直接提交 model-oob-perf-optimize SKILL 的寻优 JSON。</p></div><div class="tile"><span class="t-k"><a href="profiling-collect-params.html" target="_blank" rel="noopener">Profiling 参数采集台</a></span><p class="t-d">ascend-profiler 场景的参数采集台，生成结构化 Profiling 配置 JSON。</p></div><div class="tile"><span class="t-k"><a href="veriflow-params.html" target="_blank" rel="noopener">验证流测试台</a></span><p class="t-d">veriflow 验证流测试的参数采集台，输出对应结构化 JSON 与触发指令。</p></div><div class="tile"><span class="t-k"><a href="workbench.html" target="_blank" rel="noopener">企业 Agent 工作台</a></span><p class="t-d">插件的场景卡网格与参数表单的免安装预览版；卡数据可经 URL 参数或导入注入。</p></div><div class="tile"><span class="t-k"><a href="dsh-tui-quick-start.html" target="_blank" rel="noopener">dsh-TUI Quick Start</a></span><p class="t-d">社区 TUI 插件上手六环节：安装、装技能、启动、配置、授权、寻优参数配置。</p></div><div class="tile"><span class="t-k"><a href="dsh-quick-start.html" target="_blank" rel="noopener">DSH Quick Start</a></span><p class="t-d">宿主本体（dsh web）：版本要求、插件与技能管理、排错与备份，基于 0.1.2-rc.1 实测。</p></div>
+<div class="tile"><span class="t-k"><a href="perf-optimize-params.html" target="_blank" rel="noopener">寻优参数采集台</a></span><p class="t-d">部署拓扑、业务建模、寻优需求一次采齐，输出可直接提交 model-oob-perf-optimize SKILL 的寻优 JSON。</p></div><div class="tile"><span class="t-k"><a href="profiling-collect-params.html" target="_blank" rel="noopener">Profiling 参数采集台</a></span><p class="t-d">ascend-profiler 场景的参数采集台，生成结构化 Profiling 配置 JSON。</p></div><div class="tile"><span class="t-k"><a href="veriflow-params.html" target="_blank" rel="noopener">验证流测试台</a></span><p class="t-d">veriflow 验证流测试的参数采集台，输出对应结构化 JSON 与触发指令。</p></div><div class="tile"><span class="t-k"><a href="aiperf-params.html" target="_blank" rel="noopener">AIPerf 压测台</a></span><p class="t-d">aiperf 场景的参数采集台：并发饱和 / 速率驱动 / 爬坡三种负载模型，输出含可执行命令的结构化 JSON。</p></div><div class="tile"><span class="t-k"><a href="workbench.html" target="_blank" rel="noopener">企业 Agent 工作台</a></span><p class="t-d">插件的场景卡网格与参数表单的免安装预览版；卡数据可经 URL 参数或导入注入。</p></div><div class="tile"><span class="t-k"><a href="dsh-tui-quick-start.html" target="_blank" rel="noopener">dsh-TUI Quick Start</a></span><p class="t-d">社区 TUI 插件上手六环节：安装、装技能、启动、配置、授权、寻优参数配置。</p></div><div class="tile"><span class="t-k"><a href="dsh-quick-start.html" target="_blank" rel="noopener">DSH Quick Start</a></span><p class="t-d">宿主本体（dsh web）：版本要求、插件与技能管理、排错与备份，基于 0.1.2-rc.1 实测。</p></div>
 </div>
 </section><section id="sec-3" class="sec reveal">
 <div class="sec-head">
@@ -690,7 +690,7 @@ section[id]{scroll-margin-top:28px}
 <div class="table-wrap">
 <table>
 <thead><tr><th>页面</th><th>类型</th><th>内容</th></tr></thead>
-<tbody><tr><td><a href="index.html" target="_blank" rel="noopener">index.html</a></td><td>首页</td><td>定位说明、两种用法、工具与文档入口</td></tr><tr><td><a href="dsh-quick-start.html" target="_blank" rel="noopener">dsh-quick-start.html</a></td><td>文档</td><td>DSH Quick Start（锁版本 0.1.2-rc.1）</td></tr><tr><td><a href="dsh-tui-quick-start.html" target="_blank" rel="noopener">dsh-tui-quick-start.html</a></td><td>文档</td><td>dsh-TUI 社区插件上手指南</td></tr><tr><td><a href="perf-optimize-params.html" target="_blank" rel="noopener">perf-optimize-params.html</a></td><td>工具</td><td>寻优参数采集台（model-oob-perf-optimize）</td></tr><tr><td><a href="profiling-collect-params.html" target="_blank" rel="noopener">profiling-collect-params.html</a></td><td>工具</td><td>Profiling 参数采集台（ascend-profiler）</td></tr><tr><td><a href="veriflow-params.html" target="_blank" rel="noopener">veriflow-params.html</a></td><td>工具</td><td>验证流测试台（veriflow）</td></tr><tr><td><a href="workbench.html" target="_blank" rel="noopener">workbench.html</a></td><td>预览</td><td>企业 Agent 工作台（插件预览版）</td></tr></tbody>
+<tbody><tr><td><a href="index.html" target="_blank" rel="noopener">index.html</a></td><td>首页</td><td>定位说明、两种用法、工具与文档入口</td></tr><tr><td><a href="dsh-quick-start.html" target="_blank" rel="noopener">dsh-quick-start.html</a></td><td>文档</td><td>DSH Quick Start（锁版本 0.1.2-rc.1）</td></tr><tr><td><a href="dsh-tui-quick-start.html" target="_blank" rel="noopener">dsh-tui-quick-start.html</a></td><td>文档</td><td>dsh-TUI 社区插件上手指南</td></tr><tr><td><a href="perf-optimize-params.html" target="_blank" rel="noopener">perf-optimize-params.html</a></td><td>工具</td><td>寻优参数采集台（model-oob-perf-optimize）</td></tr><tr><td><a href="profiling-collect-params.html" target="_blank" rel="noopener">profiling-collect-params.html</a></td><td>工具</td><td>Profiling 参数采集台（ascend-profiler）</td></tr><tr><td><a href="veriflow-params.html" target="_blank" rel="noopener">veriflow-params.html</a></td><td>工具</td><td>验证流测试台（veriflow）</td></tr><tr><td><a href="aiperf-params.html" target="_blank" rel="noopener">aiperf-params.html</a></td><td>工具</td><td>AIPerf 压测台（aiperf）</td></tr><tr><td><a href="workbench.html" target="_blank" rel="noopener">workbench.html</a></td><td>预览</td><td>企业 Agent 工作台（插件预览版）</td></tr></tbody>
 </table>
 </div>
 </section>
@@ -698,8 +698,8 @@ section[id]{scroll-margin-top:28px}
 <footer class="doc-footer">
 <div class="f-row">
 <span>来源：dsh-workbench 站点首页</span>
-<span>适用：@lycheelink/dsh-workbench 0.1.2 · DSH Web 插件 · 独立参数采集工具</span>
-<span>更新：2026-09-23</span>
+<span>适用：@lycheelink/dsh-workbench 0.1.4 · DSH Web 插件 · 独立参数采集工具</span>
+<span>更新：2026-10-26</span>
 </div>
 <p class="f-note">插件在 dsh web 宿主内运行，会话操作以宿主权限为准；采集工具为单文件 HTML，可下载离线使用，生成的 JSON 只在自行复制/下载后才会离开本机。</p>
 </footer>

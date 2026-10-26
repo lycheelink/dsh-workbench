@@ -1,0 +1,1473 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>aiperf · AIPerf 压测台</title>
+<meta name="description" content="NVIDIA AIPerf 生成式 AI 推理压测参数采集台：并发饱和 / 速率驱动 / 爬坡三种负载模型，实时生成结构化 JSON 与可执行命令。">
+<style>
+  :root{
+    --bg:#f1f5ec; --panel:#ffffff;
+    --ink:#1b2416; --sub:#56614c; --muted:#65705a;
+    --line:#dfe6d6; --line-strong:#cbd7be;
+    --brand:#4d7c0f; --brand-deep:#365a08; --brand-soft:#eef6df;
+    --ok:#177a4f; --ok-soft:#e4f4ec;
+    --warn:#a8580a; --warn-soft:#fcf1e2;
+    --err:#c93f3a; --err-soft:#fdefec;
+    --console:#10160c; --console-ink:#dfe8d5; --console-sub:#95a389;
+    --j-key:#9ccfff; --j-str:#b7e39f; --j-num:#f2c66d; --j-bool:#f2a0a8;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    --shadow:0 1px 2px rgba(20,32,10,.05),0 2px 8px rgba(20,32,10,.05);
+    --radius:8px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    background:var(--bg);color:var(--ink);font-size:14px;line-height:1.55;-webkit-font-smoothing:antialiased}
+
+  /* ---------- 控制台头部 ---------- */
+  header{background:linear-gradient(115deg,#10160c 0%,#1a2411 55%,#0e1409 100%);color:#fff;
+    padding:20px 0 18px;position:relative;overflow:hidden}
+  header::before{content:"";position:absolute;inset:0;pointer-events:none;
+    background:repeating-linear-gradient(0deg,transparent 0 23px,rgba(255,255,255,.025) 23px 24px),
+               repeating-linear-gradient(90deg,transparent 0 23px,rgba(255,255,255,.025) 23px 24px)}
+  .head{max-width:1180px;margin:0 auto;padding:0 20px;position:relative;
+    display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+  .brand h1{margin:0;font-size:20px;font-weight:700;letter-spacing:.02em}
+  .brand .slug{margin-top:3px;font-family:var(--mono);font-size:11px;color:var(--console-sub);letter-spacing:.02em}
+
+  .crumb-bar{position:sticky;top:0;z-index:30;background:#fff;border-bottom:1px solid var(--line);box-shadow:0 1px 3px rgba(20,32,10,.08)}
+  .crumb{max-width:1180px;margin:0 auto;padding:6px 20px;display:flex;align-items:center;gap:6px}
+  .crumb-back{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:var(--sub);
+    text-decoration:none;padding:3px 8px;border-radius:6px;transition:color .15s,background .15s}
+  .crumb-back:hover{color:var(--brand-deep);background:var(--brand-soft)}
+  .crumb-back:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+  .crumb-sep{color:var(--muted);user-select:none}
+  .crumb-current{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .head-state{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .chip{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--console-ink);
+    border:1px solid rgba(255,255,255,.16);border-radius:5px;padding:4px 10px;background:rgba(255,255,255,.04);
+    max-width:190px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .annun{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:600;color:var(--console-sub);
+    border:1px solid rgba(255,255,255,.16);border-radius:999px;padding:4px 12px;background:rgba(255,255,255,.04)}
+  .annun i{width:7px;height:7px;border-radius:50%;background:#74866e}
+  .annun.go{color:#d9f0b8;border-color:rgba(160,210,70,.4);background:rgba(118,185,0,.1)}
+  .annun.go i{background:#8bc34a;box-shadow:0 0 8px rgba(139,195,74,.9)}
+  .head-sub{max-width:1180px;margin:9px auto 0;padding:0 20px;position:relative;
+    font-size:13px;color:var(--console-sub);line-height:1.6}
+
+  /* ---------- 布局 ---------- */
+  .wrap{max-width:1180px;margin:0 auto;padding:24px 20px 36px;display:grid;
+    grid-template-columns:minmax(0,1fr) 410px;gap:24px;align-items:start}
+  .wrap > main,.wrap > .out,.card{min-width:0}
+  @media(max-width:980px){.wrap{grid-template-columns:1fr}}
+  footer{max-width:1180px;margin:0 auto;padding:0 20px 30px;text-align:center;color:var(--muted);font-size:11.5px}
+
+  /* ---------- 卡片 ---------- */
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:var(--shadow);padding:18px 20px;margin-bottom:18px;scroll-margin-top:14px;
+    transition:box-shadow .2s,border-color .2s}
+  .card h2{margin:0 0 6px;font-size:15px;display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+  .card h2 .tag{font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+    padding:3px 8px;border-radius:4px;background:var(--brand-soft);color:var(--brand-deep)}
+  .card .desc{color:var(--sub);font-size:12.5px;margin:0 0 16px;line-height:1.6}
+  .sec-ok{font-family:var(--mono);font-size:10px;font-weight:700;color:var(--ok);background:var(--ok-soft);
+    padding:3px 9px;border-radius:999px;margin-left:auto;white-space:nowrap}
+  .card.flash{box-shadow:0 0 0 3px var(--brand-soft);border-color:var(--brand)}
+  .subhead{font-size:12px;font-weight:700;color:var(--ink);display:flex;align-items:center;gap:8px;margin:4px 0 12px}
+  .subhead::before{content:"";width:3px;height:12px;border-radius:2px;background:var(--brand)}
+  .subnote{color:var(--sub);font-size:11.5px;margin:-6px 0 12px;line-height:1.6}
+  .attach{margin-top:16px;border-top:1px solid var(--line);padding-top:14px}
+
+  /* ---------- 表单 ---------- */
+  .field{margin-bottom:15px}
+  .field label{display:block;font-weight:600;margin-bottom:6px;font-size:13px}
+  .field .hint{color:var(--muted);font-size:11.5px;margin-top:4px;line-height:1.6}
+  .req{color:var(--err);font-weight:700;margin-left:2px}
+  .opt{color:var(--muted);font-size:11px;margin-left:4px;font-weight:500}
+  .key{font-family:var(--mono);font-size:12px}
+  .kg{color:var(--muted);font-weight:500;font-size:11px;margin-left:6px}
+  input[type=text],input[type=number],input[type=password],select,textarea{width:100%;padding:9px 11px;border:1px solid var(--line-strong);
+    border-radius:6px;font-size:13px;font-family:inherit;background:#fff;color:var(--ink);transition:border-color .15s,box-shadow .15s}
+  input::placeholder,textarea::placeholder{color:var(--muted)}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-soft)}
+  textarea{resize:vertical;min-height:64px;font-family:var(--mono);font-size:12px;line-height:1.6}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:560px){.row{grid-template-columns:1fr}}
+  .input-unit{display:flex;gap:8px;align-items:stretch}
+  .input-unit input[type=text]{flex:1 1 auto;min-width:0}
+  .input-unit .unit-chk{display:inline-flex;flex:0 0 auto;align-items:center;gap:6px;margin:0;padding:0 12px;
+    border:1px solid var(--line-strong);border-radius:6px;background:#fff;font-size:13px;font-weight:600;
+    white-space:nowrap;cursor:pointer;transition:border-color .15s,background .15s;user-select:none}
+  .input-unit .unit-chk input{width:auto;padding:0;margin:0;cursor:pointer;accent-color:var(--brand)}
+  .input-unit .unit-chk.on{border-color:var(--brand);background:var(--brand-soft);color:var(--brand-deep)}
+
+  /* 即时格式提示 / 跳转高亮 */
+  .field.warn input,.field.warn select,.field.warn textarea{border-color:var(--warn)}
+  .field.warn input:focus{border-color:var(--warn);box-shadow:0 0 0 3px var(--warn-soft)}
+  .warn-msg{color:var(--warn);font-size:11.5px;margin-top:4px}
+  .field.flash input,.field.flash select,.field.flash textarea{border-color:var(--err);background:var(--err-soft)}
+  .field.flash label{color:var(--err)}
+
+  /* ---------- 选择卡片 ---------- */
+  .radio-grid{display:grid;gap:10px}
+  .radio-grid.cols2{grid-template-columns:1fr 1fr}
+  .radio-grid.cols3{grid-template-columns:repeat(3,1fr)}
+  @media(max-width:560px){.radio-grid.cols2,.radio-grid.cols3{grid-template-columns:1fr}}
+  .opt-card{border:1px solid var(--line-strong);border-radius:7px;padding:12px 14px;cursor:pointer;display:flex;gap:10px;
+    align-items:flex-start;background:#fff;position:relative;transition:border-color .15s,background .15s}
+  .opt-card:hover{border-color:var(--brand)}
+  .opt-card:focus-within{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-soft)}
+  .opt-card.sel{border-color:var(--brand);background:var(--brand-soft)}
+  .opt-card.sel::after{content:"✓";position:absolute;top:9px;right:11px;font-size:12px;font-weight:700;color:var(--brand)}
+  .opt-card input{margin-top:3px;accent-color:var(--brand)}
+  .opt-card .t{font-weight:650;font-size:13px}
+  .opt-card .d{color:var(--sub);font-size:11.5px;margin-top:3px;line-height:1.55;padding-right:14px}
+
+  .section-note{background:var(--warn-soft);border:1px solid #efd8ab;color:#7d4400;
+    border-radius:6px;padding:9px 12px;font-size:12px;margin-bottom:14px;line-height:1.6}
+  .mode-banner{margin-top:14px;padding:10px 14px;font-size:12.5px;line-height:1.6;
+    border-left:3px solid var(--brand);background:var(--brand-soft);color:var(--brand-deep);border-radius:6px;
+    display:flex;align-items:center;justify-content:space-between;gap:16px}
+  .mode-banner > span{min-width:0}
+  .shape-wrap{display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex:0 0 auto}
+  .shape-cap{font-size:9.5px;font-weight:700;letter-spacing:.05em;color:var(--muted);text-transform:uppercase}
+  .load-shape{display:flex;align-items:flex-end;gap:2px;height:26px;width:104px}
+  .load-shape i{display:block;flex:1 1 0;min-height:2px;border-radius:1px 1px 0 0;background:var(--brand);opacity:.72;
+    transition:height .25s ease}
+
+  /* ---------- 高级参数 ---------- */
+  .adv{margin-top:2px}
+  .adv summary{cursor:pointer;font-size:12.5px;font-weight:650;color:var(--brand-deep);padding:10px 0 9px;
+    list-style:none;display:flex;align-items:center;gap:8px;user-select:none}
+  .adv summary::-webkit-details-marker{display:none}
+  .adv summary::before{content:"+";width:16px;height:16px;border-radius:4px;background:var(--brand-soft);
+    color:var(--brand-deep);display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:700}
+  .adv[open] summary::before{content:"−"}
+  .adv summary:focus-visible{outline:2px solid var(--brand);outline-offset:2px;border-radius:5px}
+  .adv-body{padding-top:8px;border-top:1px dashed var(--line)}
+  .checks{display:flex;flex-wrap:wrap;gap:8px}
+  .checkline{display:inline-flex;align-items:center;gap:8px;padding:8px 11px;border:1px solid var(--line-strong);
+    border-radius:6px;background:#fff;font-size:12.5px;font-weight:600;cursor:pointer;user-select:none;margin:0;
+    transition:border-color .15s,background .15s}
+  .checkline:hover{border-color:var(--brand)}
+  .checkline:focus-within{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-soft)}
+  .checkline input{width:auto;margin:0;accent-color:var(--brand);cursor:pointer}
+
+  /* ---------- 输出面板 ---------- */
+  .out{position:sticky;top:20px}
+  html:not([data-dsh-embed]) .out{top:44px}
+  @media(max-width:980px){.out{position:static}}
+  .out .card{margin-bottom:0}
+  .collapse-btn{float:right;font-size:12px;color:var(--brand);cursor:pointer;user-select:none;background:none;border:none;font-weight:600;padding:0}
+  .collapse-btn:focus-visible{outline:2px solid var(--brand);outline-offset:2px;border-radius:4px}
+
+  .cmdbar{display:flex;align-items:center;gap:10px;margin:0 0 10px;padding:9px 12px;border:1px dashed var(--line-strong);
+    border-radius:7px;background:#f7faf3}
+  .cmd-label{font-size:11px;font-weight:700;color:var(--muted);flex:0 0 auto}
+  .cmd-val{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--brand-deep);overflow:hidden;
+    text-overflow:ellipsis;white-space:nowrap}
+  .cmdbar--cli{background:var(--console);border-color:#26321b;border-style:solid;margin-bottom:12px}
+  .cmdbar--cli .cmd-label{color:var(--console-sub)}
+  .cmdbar--cli .cmd-val{color:#b9e08a;text-overflow:clip;overflow-x:auto;scrollbar-width:thin}
+  .cmdbar--cli .cmd-val::-webkit-scrollbar{height:5px}
+  .cmdbar--cli .cmd-val::-webkit-scrollbar-thumb{background:#34452a;border-radius:3px}
+
+  .phases{margin:0 0 14px;padding:12px 13px 8px;background:#f7faf3;border:1px solid var(--line);border-radius:7px}
+  .phases-cap{font-size:11px;font-weight:700;color:var(--muted);margin:0 4px 4px}
+  .phase-row{display:flex;align-items:center;gap:9px;width:100%;border:none;background:none;padding:5px 4px;cursor:pointer;
+    border-radius:5px;font-family:inherit;font-size:12.5px;color:var(--sub);text-align:left}
+  .phase-row:hover{background:var(--brand-soft)}
+  .phase-row:focus-visible{outline:2px solid var(--brand);outline-offset:1px}
+  .phase-dot{width:7px;height:7px;border-radius:50%;background:#c6d1bc;flex:0 0 auto}
+  .phase-row.ready .phase-dot{background:var(--ok)}
+  .phase-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .phase-st{font-size:10.5px;font-weight:700;color:var(--muted);flex:0 0 auto}
+  .phase-row.ready{color:var(--ink)}
+  .phase-row.ready .phase-st{color:var(--ok)}
+
+  .meter{margin:0 0 12px}
+  .meter-head{display:flex;justify-content:space-between;align-items:baseline;font-size:11.5px;color:var(--muted);margin-bottom:6px;font-weight:600}
+  .meter-head .meter-state{font-variant-numeric:tabular-nums;font-weight:700;color:var(--ink)}
+  .meter-bar{height:8px;border-radius:4px;background:#e8eee2;border:1px solid #dbe4d2;overflow:hidden}
+  .meter-bar span{display:block;height:100%;width:0;border-radius:3px;background:linear-gradient(90deg,var(--brand-deep),#76b900);transition:width .3s ease}
+  .meter-bar.done span{background:linear-gradient(90deg,#2f6b00,#76b900)}
+
+  pre{background:var(--console);color:var(--console-ink);border:1px solid #26321b;border-radius:8px;padding:14px 16px;overflow:auto;max-height:420px;
+    font-size:11.5px;line-height:1.6;font-family:var(--mono);margin:0}
+  pre::-webkit-scrollbar{width:8px;height:8px}
+  pre::-webkit-scrollbar-thumb{background:#34452a;border-radius:4px}
+  pre::-webkit-scrollbar-track{background:transparent}
+  pre .j-k{color:var(--j-key)} pre .j-s{color:var(--j-str)} pre .j-n{color:var(--j-num)} pre .j-b{color:var(--j-bool)}
+
+  /* ---------- 按钮 / 徽标 ---------- */
+  .btn{display:inline-flex;align-items:center;gap:6px;border:none;border-radius:6px;padding:9px 15px;
+    font-size:13px;font-weight:600;cursor:pointer;transition:.15s;font-family:inherit}
+  .btn:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+  .btn.primary{background:var(--brand);color:#fff}
+  .btn.primary:hover{background:var(--brand-deep)}
+  .btn.primary:disabled{opacity:.45;cursor:not-allowed}
+  .btn.ghost{background:#eef3e7;color:var(--ink);border:1px solid var(--line)}
+  .btn.ghost:hover{background:#e4ebda}
+  .btn-row{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
+  .badge{display:inline-block;font-size:11px;padding:2px 8px;border-radius:6px;background:#eef3e7;color:var(--sub);font-weight:600}
+  .badge.ok{background:var(--ok-soft);color:var(--ok)}
+  .badge.warn{background:var(--warn-soft);color:var(--warn)}
+  .badge.err{background:var(--err-soft);color:var(--err)}
+  .kv{font-size:12px;color:var(--sub);margin:2px 0 10px;line-height:1.7}
+  .miss-link{color:var(--err);text-decoration:none;border-bottom:1px dotted currentColor}
+  .miss-link:hover{text-decoration:underline}
+  #validBox.state-warn .miss-link{color:var(--warn)}
+
+  .toast{position:fixed;right:20px;bottom:20px;z-index:50;background:var(--console);color:var(--console-ink);
+    font-size:12.5px;padding:10px 16px;border-radius:8px;box-shadow:0 8px 24px rgba(10,18,8,.35);
+    border:1px solid rgba(255,255,255,.1);opacity:0;transform:translateY(8px);transition:opacity .25s,transform .25s;
+    pointer-events:none;max-width:340px;line-height:1.5}
+  .toast.show{opacity:1;transform:none}
+
+  .hidden{display:none!important}
+
+  @media (prefers-reduced-motion:reduce){
+    *{transition:none!important;animation:none!important}
+    html{scroll-behavior:auto}
+  }
+
+  /* ---------- 嵌入模式（DSH 工作台 iframe） ----------
+     由宿主在 srcDoc 前置注入 window.__DASH_EMBED__=true 开启：
+     隐藏站点级头/尾与「复制触发指令」，显示「启动压测」按钮
+     （启动动作经桥转交宿主，替换独立态的聊天粘贴闭环），
+     去掉宽度上限、背景透明以融入宿主页面。独立部署时不受影响。 */
+  html[data-dsh-embed] .crumb-bar,
+  html[data-dsh-embed] header,
+  html[data-dsh-embed] footer{display:none}
+  html[data-dsh-embed] body{background:transparent}
+  html[data-dsh-embed] .wrap{max-width:none;padding:0}
+  html[data-dsh-embed] #copyCmdBtn{display:none}
+</style>
+</head>
+<body>
+<div class="crumb-bar">
+  <div class="crumb">
+    <a class="crumb-back" href="workbench.html">← 返回工作台</a>
+    <span class="crumb-sep" aria-hidden="true">/</span>
+    <span class="crumb-current">AIPerf 压测台</span>
+  </div>
+</div>
+
+<header>
+  <div class="head">
+    <div class="brand">
+      <h1>AIPerf 压测台</h1>
+      <div class="slug">aiperf · generative ai inference benchmark</div>
+    </div>
+    <div class="head-state">
+      <span class="chip" id="headType" title="端点类型">chat</span>
+      <span class="chip" id="headMode">并发饱和</span>
+      <span class="chip" id="headStop">请求数停止</span>
+      <div class="annun" id="headAnnun" role="status" aria-label="仍有必填项待完善"><i></i><span>待完善</span></div>
+    </div>
+  </div>
+  <p class="head-sub">为生成式 AI 推理服务收集 AIPerf 压测参数：并发饱和 / 速率驱动 / 爬坡三种负载模型，实时生成可直接提交给压测 agent 的结构化 JSON 与可执行命令。</p>
+</header>
+
+<div class="wrap">
+  <!-- ============ 左：表单区 ============ -->
+  <main>
+    <!-- ① 服务端点 -->
+    <section class="card" id="endpointCard">
+      <h2><span class="tag">ENDPOINT</span>服务端点 <span class="sec-ok" hidden>✓ 就绪</span></h2>
+      <p class="desc">AIPerf 向 OpenAI 兼容（或厂商）推理端点发压。模型名与服务地址是仅有的两个硬依赖。</p>
+      <div class="row">
+        <div class="field" data-fid="af_model"><label for="af_model">模型名称 <span class="req">*</span></label>
+          <input type="text" id="af_model" placeholder="如 Qwen/Qwen3-0.6B" autocomplete="off">
+          <div class="hint">-m/--model；须与服务端注册名一致，多模型可逗号分隔</div></div>
+        <div class="field" data-fid="af_url"><label for="af_url">服务地址 <span class="req">*</span></label>
+          <input type="text" id="af_url" value="http://localhost:8000" placeholder="http://localhost:8000" autocomplete="off">
+          <div class="hint">-u/--url；可写 host:port，AIPerf 会自动补 http://</div></div>
+      </div>
+      <div class="row">
+        <div class="field" data-fid="af_etype"><label for="af_etype">端点类型</label>
+          <select id="af_etype">
+            <optgroup label="文本生成">
+              <option value="chat" selected>chat（默认 · /v1/chat/completions）</option>
+              <option value="completions">completions</option>
+              <option value="responses">responses</option>
+              <option value="messages">messages</option>
+            </optgroup>
+            <optgroup label="向量与排序">
+              <option value="embeddings">embeddings</option>
+              <option value="chat_embeddings">chat_embeddings</option>
+              <option value="cohere_rankings">cohere_rankings</option>
+              <option value="hf_tei_rankings">hf_tei_rankings</option>
+              <option value="nim_embeddings">nim_embeddings</option>
+              <option value="nim_rankings">nim_rankings</option>
+            </optgroup>
+            <optgroup label="多模态生成">
+              <option value="image_generation">image_generation</option>
+              <option value="image_edit">image_edit</option>
+              <option value="video_generation">video_generation</option>
+              <option value="image_retrieval">image_retrieval</option>
+              <option value="audio_transcription">audio_transcription</option>
+            </optgroup>
+            <optgroup label="厂商 / 自定义">
+              <option value="huggingface_generate">huggingface_generate（TGI）</option>
+              <option value="solido_rag">solido_rag</option>
+              <option value="raw">raw（原样回放）</option>
+              <option value="template">template（Jinja2 模板）</option>
+            </optgroup>
+          </select>
+          <div class="hint">--endpoint-type；决定请求/响应格式与默认 API 路径</div></div>
+        <div class="field" data-fid="af_stream"><label>流式响应</label>
+          <label class="checkline" for="af_stream"><input type="checkbox" id="af_stream" checked> 开启 --streaming</label>
+          <div class="hint">TTFT / ITL / TTST 只有流式下可测；端点类型不支持时会被自动忽略</div></div>
+      </div>
+    </section>
+
+    <!-- ② 负载模型 -->
+    <section class="card" id="modeCard">
+      <h2>负载模型 <span class="tag" id="modeBadge">并发饱和</span> <span class="sec-ok" hidden>✓ 就绪</span></h2>
+      <p class="desc">三种负载模型取其一，决定压测形状。选定后下方专属参数随之切换；同一时刻只写入当前模型的参数。</p>
+      <div class="radio-grid" id="modeGrid">
+        <label class="opt-card sel" data-loadmode="concurrency">
+          <input type="radio" name="loadmode" value="concurrency" checked>
+          <div><div class="t">并发饱和 · 测最大吞吐</div>
+            <div class="d">固定在途请求上限，完成即补发，只受 --concurrency 约束。用于找单实例饱和点。</div></div>
+        </label>
+        <label class="opt-card" data-loadmode="request_rate">
+          <input type="radio" name="loadmode" value="request_rate">
+          <div><div class="t">速率驱动 · 稳态 SLA 验证</div>
+            <div class="d">按目标 QPS 生成到达（默认泊松），可再加一道并发上限兜底。用于容量规划与 SLA 验证。</div></div>
+        </label>
+        <label class="opt-card" data-loadmode="ramp">
+          <input type="radio" name="loadmode" value="ramp">
+          <div><div class="t">并发爬坡 · 找拐点</div>
+            <div class="d">并发从 1 在指定时长内线性爬到目标值，观察吞吐/延迟随负载变化的拐点。</div></div>
+        </label>
+      </div>
+      <div class="mode-banner" id="modeBanner">
+        <span id="modeBannerText">固定并发上限，尽可能快地发请求，只受 --concurrency 约束。适合测单实例最大吞吐。</span>
+        <div class="shape-wrap"><span class="shape-cap">负载形状</span><div class="load-shape" id="loadShape" aria-hidden="true"></div></div>
+      </div>
+      <div class="attach" id="modeFields">
+        <div id="modeConc">
+          <div class="field" data-fid="af_conc"><label for="af_conc">并发数 <span class="req">*</span></label>
+            <input type="number" id="af_conc" min="1" step="1" placeholder="如 32">
+            <div class="hint">--concurrency；在途请求上限，不设则 AIPerf 不限制</div></div>
+        </div>
+        <div id="modeRate" class="hidden">
+          <div class="row">
+            <div class="field" data-fid="af_rate"><label for="af_rate">目标 QPS <span class="req">*</span></label>
+              <input type="number" id="af_rate" min="0" step="0.1" placeholder="如 20">
+              <div class="hint">--request-rate；支持小数，如 0.5</div></div>
+            <div class="field" data-fid="af_arrival"><label for="af_arrival">到达模式</label>
+              <select id="af_arrival">
+                <option value="poisson" selected>poisson（泊松，默认）</option>
+                <option value="constant">constant（恒定间隔）</option>
+                <option value="gamma">gamma（可调平滑度）</option>
+              </select>
+              <div class="hint">--arrival-pattern；仅速率驱动模式生效</div></div>
+          </div>
+          <div class="row">
+            <div class="field hidden" data-fid="af_smooth" id="smoothField"><label for="af_smooth">gamma 平滑度</label>
+              <input type="number" id="af_smooth" min="0.1" step="0.1" placeholder="默认 1.0">
+              <div class="hint">--arrival-smoothness；1.0 近似泊松，&lt;1 更突发，&gt;1 更平滑</div></div>
+            <div class="field" data-fid="af_concCap"><label for="af_concCap">并发上限 <span class="opt">可选</span></label>
+              <input type="number" id="af_concCap" min="1" step="1" placeholder="如 40">
+              <div class="hint">--concurrency；给速率驱动加一道在途上限兜底</div></div>
+          </div>
+        </div>
+        <div id="modeRamp" class="hidden">
+          <div class="row">
+            <div class="field" data-fid="af_concRamp"><label for="af_concRamp">目标并发 <span class="req">*</span></label>
+              <input type="number" id="af_concRamp" min="1" step="1" placeholder="如 64">
+              <div class="hint">--concurrency；爬坡终点的在途请求上限</div></div>
+            <div class="field" data-fid="af_rampDur"><label for="af_rampDur">爬坡时长（秒） <span class="req">*</span></label>
+              <input type="number" id="af_rampDur" min="1" step="1" placeholder="如 120">
+              <div class="hint">--concurrency-ramp-duration；并发从 1 线性爬到目标值</div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ③ 停止条件 -->
+    <section class="card" id="stopCard">
+      <h2>停止条件 <span class="tag" id="stopBadge">按请求数</span> <span class="sec-ok" hidden>✓ 就绪</span></h2>
+      <p class="desc">至少给一个停止条件，让压测有确定的终点。按请求数便于复现与冒烟，按时长适合稳态观察。</p>
+      <div class="radio-grid cols2" id="stopGrid">
+        <label class="opt-card sel" data-stop="request_count">
+          <input type="radio" name="stopmode" value="request_count" checked>
+          <div><div class="t">按请求数</div>
+            <div class="d">发满 N 个请求后停止。负载总量确定，适合冒烟、复现与横向对比。</div></div>
+        </label>
+        <label class="opt-card" data-stop="duration">
+          <input type="radio" name="stopmode" value="duration">
+          <div><div class="t">按时长</div>
+            <div class="d">跑满 S 秒后停止发新请求，再等宽限期收尾；适合观察稳态与时间切片。</div></div>
+        </label>
+      </div>
+      <div class="attach" id="stopFields">
+        <div id="stopCount">
+          <div class="field" data-fid="af_reqcount"><label for="af_reqcount">请求数 <span class="req">*</span></label>
+            <input type="number" id="af_reqcount" min="1" step="1" placeholder="如 200">
+            <div class="hint">--request-count；与 --num-sessions 互斥，本台只使用请求数</div></div>
+        </div>
+        <div id="stopDuration" class="hidden">
+          <div class="row">
+            <div class="field" data-fid="af_duration"><label for="af_duration">压测时长（秒） <span class="req">*</span></label>
+              <input type="number" id="af_duration" min="1" step="1" placeholder="如 300">
+              <div class="hint">--benchmark-duration；到时长后停止发新请求</div></div>
+            <div class="field" data-fid="af_grace"><label for="af_grace">收尾宽限期（秒） <span class="opt">默认 30</span></label>
+              <input type="number" id="af_grace" min="0" step="1" value="30">
+              <div class="hint">--benchmark-grace-period；此窗口内完成的在途响应仍计入指标</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="mode-banner" id="stopBanner">
+        <span>发满指定请求数后停止，负载总量确定，适合冒烟与横向对比。</span>
+      </div>
+    </section>
+
+    <!-- ④ 输入负载 -->
+    <section class="card" id="dataCard">
+      <h2>输入负载 <span class="tag" id="sourceBadge">合成数据集</span> <span class="sec-ok" hidden>✓ 就绪</span></h2>
+      <p class="desc">合成数据集按 ISL/OSL 生成可控负载；公开数据集与自定义文件用于真实流量回放。文件路径为服务端绝对路径。</p>
+      <div class="radio-grid cols3" id="dataGrid">
+        <label class="opt-card sel" data-source="synthetic">
+          <input type="radio" name="datasource" value="synthetic" checked>
+          <div><div class="t">合成数据集</div><div class="d">按输入/输出长度生成，最适合参数扫描与容量规划。</div></div>
+        </label>
+        <label class="opt-card" data-source="public">
+          <input type="radio" name="datasource" value="public">
+          <div><div class="t">公开数据集</div><div class="d">AIPerf 内置约 70 个公开数据集，自动下载解析。</div></div>
+        </label>
+        <label class="opt-card" data-source="custom">
+          <input type="radio" name="datasource" value="custom">
+          <div><div class="t">自定义文件</div><div class="d">本地 trace / JSONL / 多轮会话数据，支持多种格式。</div></div>
+        </label>
+      </div>
+      <div class="attach" id="dataFields">
+        <div id="synFields">
+          <div class="row">
+            <div class="field" data-fid="af_isl"><label for="af_isl">ISL 输入长度均值 <span class="opt">默认 550</span></label>
+              <input type="number" id="af_isl" min="1" step="1" value="550">
+              <div class="hint">--isl / --prompt-input-tokens-mean；合成输入 token 均值</div></div>
+            <div class="field" data-fid="af_osl"><label for="af_osl">OSL 输出长度均值 <span class="opt">默认 256</span></label>
+              <input type="number" id="af_osl" min="1" step="1" value="256">
+              <div class="hint">--osl；作为 max_completion_tokens 发给服务端，仍可能因 EOS 提前结束</div></div>
+          </div>
+          <div class="row">
+            <div class="field" data-fid="af_islStd"><label for="af_islStd">ISL 标准差 <span class="opt">默认 0</span></label>
+              <input type="number" id="af_islStd" min="0" step="1" value="0">
+              <div class="hint">--isl-stddev；&gt;0 才有多样化输入长度</div></div>
+            <div class="field" data-fid="af_oslStd"><label for="af_oslStd">OSL 标准差 <span class="opt">默认 0</span></label>
+              <input type="number" id="af_oslStd" min="0" step="1" value="0">
+              <div class="hint">--osl-stddev；&gt;0 才有多样化输出长度</div></div>
+          </div>
+          <div class="field" data-fid="af_entries"><label for="af_entries">合成消息条数 <span class="opt">默认 100</span></label>
+            <input type="number" id="af_entries" min="1" step="1" value="100">
+            <div class="hint">--num-dataset-entries；生成多少条唯一用户消息（会话与轮次间复用）</div></div>
+          <div class="field" data-fid="af_seqdist"><label for="af_seqdist">混合长度分布 seq-dist <span class="opt">可选</span></label>
+            <input type="text" id="af_seqdist" placeholder="如 256,128:70;4096,512:30（概率合计 100）" autocomplete="off">
+            <div class="hint">--seq-dist；设置后忽略 ISL/OSL，用 (ISL,OSL):概率 的组合模拟真实混合流量</div></div>
+        </div>
+        <div id="pubFields" class="hidden">
+          <div class="field" data-fid="af_public"><label for="af_public">公开数据集名称 <span class="req">*</span></label>
+            <input type="text" id="af_public" list="publicDatasets" placeholder="如 sharegpt、aimo、mmstar" autocomplete="off">
+            <datalist id="publicDatasets">
+              <option value="sharegpt"></option>
+              <option value="aimo"></option>
+              <option value="mmstar"></option>
+              <option value="weka_hf"></option>
+              <option value="speed_bench_llm"></option>
+              <option value="speed_bench_vision"></option>
+            </datalist>
+            <div class="hint">--public-dataset；内置约 70 个，按名称自动下载解析；需要网络与磁盘空间。含时间戳的数据集会由所选负载模型接管（自动加 --no-fixed-schedule）</div></div>
+        </div>
+        <div id="customFields" class="hidden">
+          <div class="row">
+            <div class="field" data-fid="af_input"><label for="af_input">数据集文件 <span class="req">*</span></label>
+              <input type="text" id="af_input" placeholder="/data/traces/mooncake.jsonl" autocomplete="off">
+              <div class="hint">--input-file；服务端绝对路径（文件或目录）。含时间戳的 trace 会由所选负载模型接管（自动加 --no-fixed-schedule）</div></div>
+            <div class="field" data-fid="af_customType"><label for="af_customType">数据集格式 <span class="req">*</span></label>
+              <select id="af_customType">
+                <option value="single_turn">single_turn</option>
+                <option value="multi_turn">multi_turn</option>
+                <option value="random_pool">random_pool</option>
+                <option value="mooncake_trace">mooncake_trace</option>
+                <option value="bailian_trace">bailian_trace</option>
+                <option value="baseten_trace">baseten_trace</option>
+                <option value="burst_gpt_trace">burst_gpt_trace</option>
+                <option value="tracelab">tracelab</option>
+                <option value="weka_trace">weka_trace</option>
+                <option value="dag_jsonl">dag_jsonl</option>
+                <option value="raw_payload">raw_payload</option>
+                <option value="inputs_json">inputs_json</option>
+                <option value="h_cua_perf">h_cua_perf</option>
+                <option value="sagemaker_data_capture">sagemaker_data_capture</option>
+              </select>
+              <div class="hint">--custom-dataset-type；必须与文件实际格式一致</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="section-note hidden" id="seqNote">已设置 seq-dist：AIPerf 会忽略 --isl / --osl，按混合分布采样；各项概率须精确合计 100。</div>
+    </section>
+
+    <!-- ⑤ 预热与高级参数 -->
+    <section class="card" id="advCard">
+      <h2><span class="tag">ADV</span>预热与高级参数 <span class="opt" style="margin-left:auto;white-space:nowrap">全部可选</span></h2>
+      <p class="desc">默认值已按非交互执行（--ui-type none）调好；需要复现、遥测、SLO 约束或产物控制时再展开。</p>
+      <details class="adv" id="advDetails">
+        <summary>展开高级参数 · 鉴权 / tokenizer / 产物 / 遥测 / SLO</summary>
+        <div class="adv-body">
+          <div class="row">
+            <div class="field" data-fid="af_warmup"><label for="af_warmup">预热请求数</label>
+              <input type="number" id="af_warmup" min="1" step="1" placeholder="如 32">
+              <div class="hint">--warmup-request-count；预热流量不计入正式指标</div></div>
+            <div class="field" data-fid="af_tokenizer"><label for="af_tokenizer">Tokenizer</label>
+              <input type="text" id="af_tokenizer" placeholder="如 Qwen/Qwen3-0.6B 或本地路径" autocomplete="off">
+              <div class="hint">--tokenizer；留空由 AIPerf 自动探测；ISL/OSL 精度取决于它与服务端一致</div></div>
+          </div>
+          <div class="row">
+            <div class="field" data-fid="af_seed"><label for="af_seed">随机种子</label>
+              <input type="number" id="af_seed" min="0" step="1" placeholder="如 42">
+              <div class="hint">--random-seed；固定合成 prompt、采样与延迟，便于 A/B 对比</div></div>
+            <div class="field" data-fid="af_timeout"><label for="af_timeout">单请求超时（秒）</label>
+              <input type="number" id="af_timeout" min="1" step="1" placeholder="默认 21600">
+              <div class="hint">--request-timeout-seconds；含建连、发送与收完响应</div></div>
+          </div>
+          <div class="field" data-fid="af_extra"><label for="af_extra">附加请求字段 --extra-inputs</label>
+            <textarea id="af_extra" placeholder="ignore_eos:true max_tokens:256&#10;或 JSON：{&quot;temperature&quot;:0,&quot;top_p&quot;:1}"></textarea>
+            <div class="hint">注入采样参数与服务端开关；控制输出长度常用 ignore_eos / min_tokens</div></div>
+          <div class="field" data-fid="af_endpoint"><label for="af_endpoint">自定义 API 路径</label>
+            <input type="text" id="af_endpoint" placeholder="如 /v1/chat/completions" autocomplete="off">
+            <div class="hint">--endpoint；留空按端点类型自动推导，网关改写路径时使用</div></div>
+          <div class="row">
+            <div class="field" data-fid="af_outdir"><label for="af_outdir">产物根目录</label>
+              <input type="text" id="af_outdir" value="artifacts" autocomplete="off">
+              <div class="hint">--output-artifact-dir；JSON / CSV / JSONL / 日志都落在这里</div></div>
+            <div class="field" data-fid="af_export"><label for="af_export">导出级别</label>
+              <select id="af_export">
+                <option value="summary">summary（仅聚合指标）</option>
+                <option value="records" selected>records（逐请求指标，默认）</option>
+                <option value="raw">raw（原始请求/响应，体积大）</option>
+              </select>
+              <div class="hint">--export-level；排查异常请求才用 raw</div></div>
+          </div>
+          <div class="row">
+            <div class="field" data-fid="af_slice"><label for="af_slice">时间切片窗口（秒）</label>
+              <input type="number" id="af_slice" min="1" step="1" placeholder="如 10">
+              <div class="hint">--slice-duration；按固定窗口分别计算指标，观察衰减</div></div>
+            <div class="field" data-fid="af_goodput"><label for="af_goodput">Goodput SLO</label>
+              <input type="text" id="af_goodput" placeholder="request_latency:250 inter_token_latency:10" autocomplete="off">
+              <div class="hint">--goodput；只有同时满足全部阈值的请求才计入有效吞吐</div></div>
+          </div>
+          <div class="row">
+            <div class="field" data-fid="af_prefill"><label for="af_prefill">Prefill 并发上限</label>
+              <input type="number" id="af_prefill" min="1" step="1" placeholder="如 4">
+              <div class="hint">--prefill-concurrency；需 streaming，且 ≤ 并发数，用于长上下文显存安全压测</div></div>
+            <div class="field" data-fid="af_gpu"><label for="af_gpu">GPU 遥测</label>
+              <select id="af_gpu">
+                <option value="" selected>默认（DCGM exporter）</option>
+                <option value="pynvml">pynvml（本地 NVIDIA）</option>
+                <option value="amdsmi">amdsmi（本地 AMD）</option>
+                <option value="ascend">ascend（昇腾 npu-exporter）</option>
+                <option value="dashboard">dashboard（实时曲线）</option>
+                <option value="none">关闭遥测</option>
+              </select>
+              <div class="hint">--gpu-telemetry / --no-gpu-telemetry；留空走默认 DCGM 端点</div></div>
+          </div>
+          <div class="row">
+            <div class="field" data-fid="af_uitype"><label for="af_uitype">界面模式</label>
+              <select id="af_uitype">
+                <option value="none" selected>none（仅日志，适合 agent / CI）</option>
+                <option value="simple">simple（TQDM 进度条）</option>
+                <option value="dashboard">dashboard（实时 TUI 仪表盘）</option>
+              </select>
+              <div class="hint">--ui-type；输出非 TTY 时 AIPerf 会自动降级为 none</div></div>
+            <div class="field" data-fid="af_apikey"><label for="af_apikey">API Key <span class="opt">不写入本地草稿</span></label>
+              <input type="password" id="af_apikey" placeholder="Bearer Token（可选）" autocomplete="new-password">
+              <div class="hint">--api-key；自动加 Authorization: Bearer &lt;key&gt;，只随本次 JSON 提交</div></div>
+          </div>
+          <div class="checks">
+            <label class="checkline" for="af_chattemplate"><input type="checkbox" id="af_chattemplate"> 套用 chat template 计数</label>
+            <label class="checkline" for="af_plot"><input type="checkbox" id="af_plot"> 结束后自动绘图</label>
+            <label class="checkline" for="af_noservermetrics"><input type="checkbox" id="af_noservermetrics"> 关闭服务端指标</label>
+            <label class="checkline" for="af_netlat"><input type="checkbox" id="af_netlat"> 自动扣除网络 RTT</label>
+          </div>
+        </div>
+      </details>
+    </section>
+  </main>
+
+  <!-- ============ 右：输出区 ============ -->
+  <aside class="out">
+    <section class="card">
+      <h2>参数输出 <button class="collapse-btn" id="toggleJson">收起 JSON</button></h2>
+      <p class="desc">随表单实时更新，就绪后复制提交给压测 agent。</p>
+      <div class="cmdbar"><span class="cmd-label">触发指令</span><code class="cmd-val" id="cmdVal">使用 AIPerf 执行推理性能压测</code></div>
+      <div class="cmdbar cmdbar--cli"><span class="cmd-label">CLI</span><code class="cmd-val" id="cliVal" title="生成的 AIPerf 命令">aiperf profile …</code></div>
+      <div class="phases">
+        <p class="phases-cap">阶段就绪</p>
+        <div id="phaseList"></div>
+      </div>
+      <div class="meter">
+        <div class="meter-head"><span>必填完成度</span><span class="meter-state" id="meterState">0 / 0</span></div>
+        <div class="meter-bar" id="meterBar" role="progressbar" aria-label="必填完成度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="meterFill"></span></div>
+      </div>
+      <div id="validBox" class="kv" aria-live="polite"></div>
+      <pre id="jsonOut" aria-label="生成的结构化参数 JSON"></pre>
+      <div class="btn-row">
+        <button class="btn primary hidden" id="launchBtn" disabled>启动压测</button>
+        <button class="btn primary" id="copyCmdBtn" data-orig="复制触发指令">复制触发指令</button>
+        <button class="btn ghost" id="downloadBtn">下载 JSON</button>
+        <button class="btn ghost" id="resetBtn">重置表单</button>
+      </div>
+    </section>
+  </aside>
+</div>
+
+<footer>参数采集与结构化输出工具 · 输出的 JSON 含可直接执行的 AIPerf 命令</footer>
+
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const val = id => { const el = $(id); return el ? (el.value || "").trim() : ""; };
+
+// ── 嵌入模式桥（DSH 工作台 iframe） ──
+// 宿主以 iframe(srcDoc) 引入本页时，会在文档最前注入
+// window.__DASH_EMBED__ = true。嵌入态通过 postMessage 向宿主同步
+// 最新 JSON / 就绪态 / 内容高度；独立部署时 IS_EMBED=false，这些全为 no-op。
+const IS_EMBED = window.__DASH_EMBED__ === true;
+if(IS_EMBED) document.documentElement.setAttribute('data-dsh-embed', '');
+function postBridge(kind, extra){
+  if(!IS_EMBED) return;
+  try{
+    const msg = Object.assign({ bridge:'dsh-wb:artifact', kind, cardId:'aiperf' }, extra || {});
+    (window.parent || window).postMessage(msg, '*');
+  }catch(e){}
+}
+
+const MODE_META = {
+  concurrency: {
+    label:'并发饱和', short:'并发饱和',
+    banner:'固定并发上限，尽可能快地发请求，只受 --concurrency 约束。适合测单实例最大吞吐。',
+    shape:[14,58,88,100,98,100,97,100,99,100,98,100,99,100,97,100,99,100]
+  },
+  request_rate: {
+    label:'速率驱动', short:'速率驱动',
+    banner:'按目标 QPS 生成到达（默认泊松），可再加一道并发上限兜底。适合稳态 SLA 验证。',
+    shape:[55,62,48,70,58,64,50,72,56,66,52,68,60,64,54,70,58,62]
+  },
+  ramp: {
+    label:'并发爬坡', short:'并发爬坡',
+    banner:'并发从 1 在指定时长内线性爬到目标值，观察吞吐/延迟随负载变化的拐点。',
+    shape:[8,14,22,30,38,46,55,63,71,79,86,92,97,100,100,100,100,100]
+  }
+};
+const STOP_META = {
+  request_count: {
+    label:'按请求数',
+    banner:'发满指定请求数后停止，负载总量确定，适合冒烟与横向对比。'
+  },
+  duration: {
+    label:'按时长',
+    banner:'跑满指定秒数后停止发新请求，再等宽限期收尾；建议配合时间切片观察稳态。'
+  }
+};
+const SOURCE_META = {
+  synthetic: { label:'合成数据集' },
+  public: { label:'公开数据集' },
+  custom: { label:'自定义文件' }
+};
+const STORAGE_KEY = 'aiperf.draft.v1';
+
+function curRadio(name, fallback){
+  const r = document.querySelector('input[name="' + name + '"]:checked');
+  return r ? r.value : fallback;
+}
+function curMode(){ return curRadio('loadmode', 'concurrency'); }
+function curStop(){ return curRadio('stopmode', 'request_count'); }
+function curSource(){ return curRadio('datasource', 'synthetic'); }
+
+// ---------- 数值工具 ----------
+function num(id){
+  const s = val(id);
+  if(s === '') return null;
+  const n = Number(s);
+  return Number.isFinite(n) ? n : null;
+}
+function isPosInt(s){ return Number.isInteger(Number(s)) && Number(s) > 0; }
+function isPosNum(s){ return Number.isFinite(Number(s)) && Number(s) > 0; }
+function isNonNegInt(s){ return Number.isInteger(Number(s)) && Number(s) >= 0; }
+function isNonNegNum(s){ return Number.isFinite(Number(s)) && Number(s) >= 0; }
+
+// ---------- 选择卡片高亮（含键盘方向键切换） ----------
+function bindGrid(sel, applyFn){
+  document.querySelectorAll(sel).forEach(c=>{
+    c.addEventListener('click', ()=>{
+      c.querySelector('input').checked = true;
+      document.querySelectorAll(sel).forEach(x=>x.classList.remove('sel'));
+      c.classList.add('sel');
+      applyFn();
+    });
+  });
+  document.querySelectorAll(sel + ' input').forEach(r=>{
+    r.addEventListener('change', ()=>{
+      document.querySelectorAll(sel).forEach(x=>x.classList.toggle('sel', x.querySelector('input').value === r.value));
+      applyFn();
+    });
+  });
+}
+function syncGrid(sel){
+  document.querySelectorAll(sel + ' .opt-card').forEach(c=>{
+    c.classList.toggle('sel', c.querySelector('input').checked);
+  });
+}
+
+// ---------- 模式联动 ----------
+function applyMode(){
+  const mode = curMode(), meta = MODE_META[mode];
+  $('modeBadge').textContent = meta.label;
+  $('modeBannerText').textContent = meta.banner;
+  $('modeConc').classList.toggle('hidden', mode !== 'concurrency');
+  $('modeRate').classList.toggle('hidden', mode !== 'request_rate');
+  $('modeRamp').classList.toggle('hidden', mode !== 'ramp');
+  syncArrival();
+  renderShape();
+  render();
+}
+function syncArrival(){
+  const show = curMode() === 'request_rate' && val('af_arrival') === 'gamma';
+  $('smoothField').classList.toggle('hidden', !show);
+}
+function renderShape(){
+  const bars = document.querySelectorAll('#loadShape i');
+  const shape = MODE_META[curMode()].shape;
+  bars.forEach((b, i) => { b.style.height = shape[i % shape.length] + '%'; });
+}
+function applyStop(){
+  const stop = curStop(), meta = STOP_META[stop];
+  $('stopBadge').textContent = meta.label;
+  $('stopBanner').textContent = meta.banner;
+  $('stopCount').classList.toggle('hidden', stop !== 'request_count');
+  $('stopDuration').classList.toggle('hidden', stop !== 'duration');
+  render();
+}
+function applySource(){
+  const src = curSource();
+  $('sourceBadge').textContent = SOURCE_META[src].label;
+  $('synFields').classList.toggle('hidden', src !== 'synthetic');
+  $('pubFields').classList.toggle('hidden', src !== 'public');
+  $('customFields').classList.toggle('hidden', src !== 'custom');
+  render();
+}
+
+bindGrid('#modeGrid .opt-card', applyMode);
+bindGrid('#stopGrid .opt-card', applyStop);
+bindGrid('#dataGrid .opt-card', applySource);
+
+// 输入监听：所有联动统一在 render() 中刷新
+document.querySelectorAll('input,select,textarea').forEach(el=>{
+  ['input','change'].forEach(ev=>el.addEventListener(ev, ()=>{
+    userTouched = true;
+    if(el.id === 'af_arrival') syncArrival();
+    render();
+  }));
+});
+
+// ---------- 必填项与格式校验 ----------
+const NUMERIC_REQUIRED = {
+  af_conc: { test:isPosInt, msg:'应为正整数' },
+  af_rate: { test:isPosNum, msg:'应为正数' },
+  af_concRamp: { test:isPosInt, msg:'应为正整数' },
+  af_rampDur: { test:isPosInt, msg:'应为正整数秒' },
+  af_reqcount: { test:isPosInt, msg:'应为正整数' },
+  af_duration: { test:isPosInt, msg:'应为正整数秒' }
+};
+
+function requiredList(){
+  const req = [
+    { id:'af_model', label:'模型名称' },
+    { id:'af_url', label:'服务地址' }
+  ];
+  const mode = curMode();
+  if(mode === 'concurrency') req.push({ id:'af_conc', label:'并发数' });
+  if(mode === 'request_rate') req.push({ id:'af_rate', label:'目标 QPS' });
+  if(mode === 'ramp'){
+    req.push({ id:'af_concRamp', label:'目标并发' });
+    req.push({ id:'af_rampDur', label:'爬坡时长' });
+  }
+  if(curStop() === 'request_count') req.push({ id:'af_reqcount', label:'请求数' });
+  else req.push({ id:'af_duration', label:'压测时长' });
+  const src = curSource();
+  if(src === 'public') req.push({ id:'af_public', label:'公开数据集' });
+  if(src === 'custom'){
+    req.push({ id:'af_input', label:'数据集文件' });
+    req.push({ id:'af_customType', label:'数据集格式' });
+  }
+  return req;
+}
+function missingRequired(){
+  return requiredList().filter(f => !val(f.id));
+}
+function invalidRequired(){
+  return requiredList().filter(f => {
+    const v = val(f.id);
+    if(!v) return false;
+    const spec = NUMERIC_REQUIRED[f.id];
+    return spec ? !spec.test(v) : false;
+  });
+}
+// 可选的数值字段：填了就要能被解析
+function optionalNumWarns(warn){
+  const positive = (id, name, integer) => {
+    const v = val(id);
+    if(v && !(integer ? isPosInt(v) : isPosNum(v))) warn(id, name + ' 应为正' + (integer ? '整数' : '数'));
+  };
+  const nonNeg = (id, name, integer) => {
+    const v = val(id);
+    if(v && !(integer ? isNonNegInt(v) : isNonNegNum(v))) warn(id, name + ' 应为非负' + (integer ? '整数' : '数'));
+  };
+  // Only warn about fields that are active in the current mode/source/stop;
+  // hidden leftovers must not surface as validation errors.
+  positive('af_prefill', 'Prefill 并发上限', true);
+  positive('af_warmup', '预热请求数', true);
+  positive('af_timeout', '单请求超时', false);
+  positive('af_slice', '时间切片窗口', false);
+  nonNeg('af_seed', '随机种子', true);
+  if(curMode() === 'request_rate'){
+    positive('af_concCap', '并发上限', true);
+    positive('af_smooth', 'gamma 平滑度', false);
+  }
+  if(curStop() === 'duration'){
+    nonNeg('af_grace', '收尾宽限期', true);
+  }
+  if(curSource() === 'synthetic'){
+    positive('af_entries', '合成消息条数', true);
+    nonNeg('af_islStd', 'ISL 标准差', false);
+    nonNeg('af_oslStd', 'OSL 标准差', false);
+    if(val('af_isl') && !isPosNum(val('af_isl'))) warn('af_isl', 'ISL 输入长度应为正数');
+    if(val('af_osl') && !isPosNum(val('af_osl'))) warn('af_osl', 'OSL 输出长度应为正数');
+  }
+}
+
+function seqProbabilities(text){
+  const s = text.trim();
+  if(s.startsWith('{')){
+    try{
+      const j = JSON.parse(s);
+      const pairs = j.pairs || j.sequence_distribution || [];
+      const probs = pairs.map(p => Number(p.prob !== undefined ? p.prob : p.probability));
+      return probs.every(Number.isFinite) ? probs : null;
+    }catch(e){ return null; }
+  }
+  const probs = [];
+  const re = /:(\d+(?:\.\d+)?)(?=\s*(?:[;,\]}])|$)/g;
+  let m;
+  while((m = re.exec(s)) !== null) probs.push(Number(m[1]));
+  return probs.length ? probs : null;
+}
+
+function syntaxWarns(){
+  const byId = new Map();
+  const warn = (id, msg) => {
+    if(!byId.has(id)) byId.set(id, []);
+    const list = byId.get(id);
+    if(list.indexOf(msg) === -1) list.push(msg);
+  };
+
+  const url = val('af_url');
+  if(url && !/^https?:\/\//i.test(url)) warn('af_url', '建议写全 http:// 或 https://（AIPerf 会自动补 http://）');
+  if(url && /\s/.test(url)) warn('af_url', '服务地址不能包含空格');
+  if(url && /\/$/.test(url)) warn('af_url', '建议去掉末尾斜杠，避免路径拼接出双斜杠');
+
+  optionalNumWarns(warn);
+
+  if(curMode() === 'request_rate' && val('af_arrival') === 'gamma' && !val('af_smooth')){
+    warn('af_smooth', 'gamma 模式建议显式给出平滑度（默认 1.0）');
+  }
+  if(curMode() === 'request_rate' && val('af_concCap') && val('af_rate')){
+    // 速率模式下并发上限是天花板，不强制校验，但提示可能的限流
+    const cap = Number(val('af_concCap'));
+    if(cap > 0 && cap < 2) warn('af_concCap', '并发上限过低，速率可能无法达成');
+  }
+
+  const activeConc = curMode() === 'concurrency' ? val('af_conc') : (curMode() === 'ramp' ? val('af_concRamp') : val('af_concCap'));
+  if(val('af_prefill')){
+    if(!$('af_stream').checked) warn('af_prefill', 'Prefill 并发上限需要开启流式响应');
+    if(activeConc && Number(val('af_prefill')) > Number(activeConc)) warn('af_prefill', 'Prefill 并发上限应 ≤ 当前并发数');
+  }
+
+  if(curSource() === 'synthetic' && val('af_seqdist')){
+    warn('af_seqdist', '已设置 seq-dist，--isl / --osl 将被忽略');
+    const probs = seqProbabilities(val('af_seqdist'));
+    if(probs === null){
+      warn('af_seqdist', '无法解析概率，请用 ISL,OSL:概率;ISL,OSL:概率 格式');
+    }else{
+      const sum = probs.reduce((a, b) => a + b, 0);
+      if(!Number.isFinite(sum) || Math.abs(sum - 100) > 0.5){
+        warn('af_seqdist', '概率合计为 ' + (Number.isFinite(sum) ? sum : '?') + '，须精确合计 100');
+      }
+    }
+  }
+  if(curSource() === 'public' && val('af_public') && /\s/.test(val('af_public'))){
+    warn('af_public', '数据集名称不能包含空格');
+  }
+  if(curSource() === 'custom' && val('af_input') && !/^\//.test(val('af_input'))){
+    warn('af_input', '数据集文件应为服务端绝对路径（以 / 开头）');
+  }
+  if(val('af_endpoint') && !/^\//.test(val('af_endpoint'))){
+    warn('af_endpoint', 'API 路径应以 / 开头，如 /v1/chat/completions');
+  }
+
+  const extra = val('af_extra');
+  if(extra && extra.trim().startsWith('{')){
+    try{ JSON.parse(extra); }
+    catch(e){ warn('af_extra', '看起来是 JSON，但无法解析'); }
+  }
+  if(val('af_goodput') && !/^[a-z_]+:\s*\d+(?:\.\d+)?(?:\s+[a-z_]+:\s*\d+(?:\.\d+)?)*$/.test(val('af_goodput'))){
+    warn('af_goodput', '格式应为空格分隔的 指标:阈值，如 request_latency:250 inter_token_latency:10');
+  }
+
+  return [...byId].map(([id, msgs]) => ({ id, msg:msgs.join('；') }));
+}
+
+// ---------- 输出 ----------
+function prune(value){
+  if(Array.isArray(value)) return value.map(prune);
+  if(value && typeof value === 'object'){
+    const out = {};
+    for(const k in value){
+      const p = prune(value[k]);
+      if(p !== null && p !== undefined && p !== '') out[k] = p;
+    }
+    return out;
+  }
+  return value;
+}
+function shellQuote(value){
+  const s = String(value);
+  if(/^[A-Za-z0-9_@%+=:,./-]+$/.test(s)) return s;
+  return "'" + s.replace(/'/g, "'\\''") + "'";
+}
+function buildCommand(cfg){
+  const e = cfg.endpoint || {};
+  const l = cfg.load || {};
+  const s = cfg.stop || {};
+  const d = cfg.dataset || {};
+  const a = cfg.advanced || {};
+  const args = ['aiperf', 'profile'];
+  const push = (flag, value) => {
+    if(value === undefined || value === null || value === '') return;
+    args.push(flag, shellQuote(value));
+  };
+
+  push('--model', e.model);
+  push('--url', e.url);
+  push('--endpoint-type', e.endpoint_type);
+  push('--endpoint', e.path);
+  if(e.streaming) args.push('--streaming');
+  push('--api-key', e.api_key);
+
+  if(l.mode === 'request_rate'){
+    push('--request-rate', l.request_rate);
+    push('--arrival-pattern', l.arrival_pattern);
+    if(l.arrival_pattern === 'gamma') push('--arrival-smoothness', l.arrival_smoothness);
+    push('--concurrency', l.concurrency);
+  }else{
+    push('--concurrency', l.concurrency);
+    if(l.mode === 'ramp') push('--concurrency-ramp-duration', l.concurrency_ramp_duration);
+  }
+
+  if(s.mode === 'request_count'){
+    push('--request-count', s.request_count);
+  }else{
+    push('--benchmark-duration', s.benchmark_duration);
+    push('--benchmark-grace-period', s.benchmark_grace_period);
+  }
+
+  if(d.source === 'synthetic'){
+    if(d.seq_dist){
+      push('--seq-dist', d.seq_dist);
+    }else{
+      push('--isl', d.isl);
+      if(d.isl_stddev) push('--isl-stddev', d.isl_stddev);
+      push('--osl', d.osl);
+      if(d.osl_stddev) push('--osl-stddev', d.osl_stddev);
+    }
+    push('--num-dataset-entries', d.num_dataset_entries);
+  }else if(d.source === 'public'){
+    push('--public-dataset', d.public_dataset);
+  }else{
+    push('--input-file', d.input_file);
+    push('--custom-dataset-type', d.custom_dataset_type);
+  }
+  // AIPerf auto-enables fixed-schedule for timestamped trace datasets, which
+  // would silently override the load model chosen above. Keep the console's
+  // concurrency / rate / ramp shape authoritative.
+  if(d.source === 'public' || d.source === 'custom') args.push('--no-fixed-schedule');
+
+  if(cfg.warmup) push('--warmup-request-count', cfg.warmup.request_count);
+
+  push('--tokenizer', a.tokenizer);
+  push('--random-seed', a.random_seed);
+  push('--extra-inputs', a.extra_inputs);
+  push('--request-timeout-seconds', a.request_timeout_seconds);
+  push('--output-artifact-dir', a.output_artifact_dir);
+  push('--export-level', a.export_level);
+  push('--slice-duration', a.slice_duration);
+  push('--goodput', a.goodput);
+  push('--prefill-concurrency', a.prefill_concurrency);
+  if(a.gpu_telemetry === 'none') args.push('--no-gpu-telemetry');
+  else push('--gpu-telemetry', a.gpu_telemetry);
+  if(a.apply_chat_template) args.push('--apply-chat-template');
+  if(a.auto_plot) args.push('--auto-plot');
+  if(a.server_metrics === false) args.push('--no-server-metrics');
+  if(a.network_latency_automatic) args.push('--network-latency-automatic');
+  push('--ui-type', a.ui_type || 'none');
+
+  return args.join(' ');
+}
+
+function buildJSON(){
+  const mode = curMode();
+  const stop = curStop();
+  const source = curSource();
+  const out = {
+    tool: 'aiperf',
+    endpoint: {
+      model: val('af_model'),
+      url: val('af_url'),
+      endpoint_type: val('af_etype'),
+      streaming: $('af_stream').checked
+    },
+    load: { mode: mode },
+    stop: { mode: stop },
+    dataset: { source: source }
+  };
+  if(val('af_endpoint')) out.endpoint.path = val('af_endpoint');
+  if(val('af_apikey')) out.endpoint.api_key = val('af_apikey');
+
+  if(mode === 'concurrency'){
+    out.load.concurrency = num('af_conc');
+  }else if(mode === 'request_rate'){
+    out.load.request_rate = num('af_rate');
+    out.load.arrival_pattern = val('af_arrival');
+    if(val('af_arrival') === 'gamma') out.load.arrival_smoothness = num('af_smooth');
+    if(num('af_concCap') !== null) out.load.concurrency = num('af_concCap');
+  }else{
+    out.load.concurrency = num('af_concRamp');
+    out.load.concurrency_ramp_duration = num('af_rampDur');
+  }
+
+  if(stop === 'request_count'){
+    out.stop.request_count = num('af_reqcount');
+  }else{
+    out.stop.benchmark_duration = num('af_duration');
+    out.stop.benchmark_grace_period = num('af_grace');
+  }
+
+  if(source === 'synthetic'){
+    if(val('af_seqdist')){
+      out.dataset.seq_dist = val('af_seqdist');
+    }else{
+      out.dataset.isl = num('af_isl');
+      out.dataset.isl_stddev = num('af_islStd');
+      out.dataset.osl = num('af_osl');
+      out.dataset.osl_stddev = num('af_oslStd');
+    }
+    out.dataset.num_dataset_entries = num('af_entries');
+  }else if(source === 'public'){
+    out.dataset.public_dataset = val('af_public');
+  }else{
+    out.dataset.input_file = val('af_input');
+    out.dataset.custom_dataset_type = val('af_customType');
+  }
+
+  if(num('af_warmup') !== null) out.warmup = { request_count: num('af_warmup') };
+
+  const adv = {};
+  if(val('af_tokenizer')) adv.tokenizer = val('af_tokenizer');
+  if(num('af_seed') !== null) adv.random_seed = num('af_seed');
+  if(val('af_extra')) adv.extra_inputs = val('af_extra');
+  if(num('af_timeout') !== null) adv.request_timeout_seconds = num('af_timeout');
+  if(val('af_outdir')) adv.output_artifact_dir = val('af_outdir');
+  if(val('af_export') && val('af_export') !== 'records') adv.export_level = val('af_export');
+  if(num('af_slice') !== null) adv.slice_duration = num('af_slice');
+  if(val('af_goodput')) adv.goodput = val('af_goodput');
+  if(num('af_prefill') !== null) adv.prefill_concurrency = num('af_prefill');
+  if(val('af_gpu')) adv.gpu_telemetry = val('af_gpu');
+  if($('af_plot').checked) adv.auto_plot = true;
+  if($('af_noservermetrics').checked) adv.server_metrics = false;
+  if($('af_netlat').checked) adv.network_latency_automatic = true;
+  if($('af_chattemplate').checked) adv.apply_chat_template = true;
+  adv.ui_type = val('af_uitype') || 'none';
+  out.advanced = adv;
+
+  const pruned = prune(out);
+  pruned.command = buildCommand(pruned);
+  return pruned;
+}
+
+// 轻量 JSON 语法着色
+function hl(json){
+  let e = json.replace(/[<>&]/g, m=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[m]));
+  e = e.replace(/(\s)("(?:[^"\\]|\\.)*")(\s*:)/g, '$1<span class="j-k">$2</span>$3');
+  e = e.replace(/: ("(?:[^"\\]|\\.)*")/g, ': <span class="j-s">$1</span>');
+  e = e.replace(/: (-?\d+(?:\.\d+)?)/g, ': <span class="j-n">$1</span>');
+  e = e.replace(/: (true|false|null)/g, ': <span class="j-b">$1</span>');
+  return e;
+}
+
+let lastJSON = '';
+let lastCommand = '';
+let invalidIds = new Set();
+let userTouched = false;
+
+function missLinks(items){
+  return items.map(it => {
+    const lbl = it.label || (() => {
+      const f = document.querySelector('.field[data-fid="' + it.id + '"] label');
+      return f ? f.textContent.replace(/\s+/g, ' ').trim() : it.id;
+    })();
+    return '<a class="miss-link" href="#" data-jump="' + it.id + '">' + lbl + '</a>';
+  }).join('、');
+}
+function fieldReady(id){
+  return val(id) !== '' && !invalidIds.has(id);
+}
+function setSec(cardId, ids){
+  const card = $(cardId);
+  if(!card) return;
+  const el = card.querySelector('.sec-ok');
+  if(!el) return;
+  el.hidden = !(ids.length === 0 || ids.every(fieldReady));
+}
+function clearWarns(){
+  document.querySelectorAll('.field.warn').forEach(f=>{
+    f.classList.remove('warn');
+    f.querySelectorAll('.warn-msg').forEach(m => m.remove());
+  });
+}
+
+function render(){
+  const req = requiredList();
+  const missing = missingRequired();
+  const invalid = invalidRequired();
+  const warns = syntaxWarns();
+  invalidIds = new Set(invalid.map(f => f.id));
+
+  const total = req.length;
+  const done = Math.max(0, total - missing.length - invalid.length);
+  const ready = missing.length === 0 && invalid.length === 0;
+
+  const built = buildJSON();
+  lastJSON = JSON.stringify(built, null, 2);
+  $('jsonOut').innerHTML = hl(lastJSON);
+  lastCommand = built.command || 'aiperf profile';
+  $('cliVal').textContent = lastCommand;
+  $('cliVal').title = lastCommand;
+
+  const fill = $('meterFill'), bar = $('meterBar');
+  const pct = total ? Math.round(done / total * 100) : 0;
+  fill.style.width = pct + '%';
+  bar.classList.toggle('done', ready);
+  bar.setAttribute('aria-valuenow', String(pct));
+  $('meterState').textContent = done + ' / ' + total + ' · ' + pct + '%';
+
+  // 嵌入态「启动压测」按钮：与必填完成度同口径门禁（独立态恒隐藏，不影响）
+  const lb = $('launchBtn'); if(lb) lb.disabled = !ready;
+
+  const box = $('validBox');
+  if(missing.length){
+    box.className = 'kv state-err';
+    box.innerHTML = '<span class="badge err">还差 ' + missing.length + ' 项必填</span> ' + missLinks(missing);
+  }else if(invalid.length){
+    box.className = 'kv state-err';
+    box.innerHTML = '<span class="badge err">' + invalid.length + ' 项格式待修正</span> ' + missLinks(invalid);
+  }else if(warns.length){
+    box.className = 'kv state-warn';
+    box.innerHTML = '<span class="badge warn">必填齐全，' + warns.length + ' 条格式提示</span> ' + missLinks(warns);
+  }else{
+    box.className = 'kv state-ok';
+    box.innerHTML = '<span class="badge ok">✓ 必填齐全</span> 可直接复制输出并提交给压测 agent。';
+  }
+
+  setSec('endpointCard', ['af_model', 'af_url']);
+  setSec('modeCard', modeRequiredIds());
+  setSec('stopCard', stopRequiredIds());
+  setSec('dataCard', dataRequiredIds());
+  setSec('advCard', []);
+
+  $('seqNote').classList.toggle('hidden', !(curSource() === 'synthetic' && val('af_seqdist')));
+
+  clearWarns();
+  warns.forEach(w=>{
+    const f = document.querySelector('.field[data-fid="' + w.id + '"]');
+    if(!f) return;
+    f.classList.add('warn');
+    const m = document.createElement('div');
+    m.className = 'warn-msg';
+    m.textContent = '⚠ ' + w.msg;
+    f.appendChild(m);
+  });
+
+  renderHeader(ready);
+  renderPhases();
+  renderCmd();
+  saveDraft();
+  if(IS_EMBED) postBridge('state', { json: built, ready: ready, warns: warns });
+}
+
+function modeRequiredIds(){
+  const mode = curMode();
+  if(mode === 'concurrency') return ['af_conc'];
+  if(mode === 'request_rate') return ['af_rate'];
+  return ['af_concRamp', 'af_rampDur'];
+}
+function stopRequiredIds(){
+  return curStop() === 'request_count' ? ['af_reqcount'] : ['af_duration'];
+}
+function dataRequiredIds(){
+  const src = curSource();
+  if(src === 'public') return ['af_public'];
+  if(src === 'custom') return ['af_input', 'af_customType'];
+  return [];
+}
+
+// ---------- 头部状态 / 阶段就绪 / 触发指令预览 ----------
+function triggerText(){
+  const model = val('af_model') || '目标模型';
+  const mode = MODE_META[curMode()].label;
+  const stop = curStop() === 'request_count'
+    ? (val('af_reqcount') ? '发满 ' + val('af_reqcount') + ' 个请求' : '按请求数停止')
+    : (val('af_duration') ? '运行 ' + val('af_duration') + ' 秒' : '按时长停止');
+  return '使用 AIPerf 对 ' + model + ' 执行' + mode + '压测（' + stop + '）';
+}
+
+function renderHeader(ready){
+  const me = $('headMode'), se = $('headStop'), te = $('headType');
+  if(te) te.textContent = val('af_etype') || 'chat';
+  if(me) me.textContent = MODE_META[curMode()].label;
+  if(se) se.textContent = curStop() === 'request_count'
+    ? (val('af_reqcount') ? val('af_reqcount') + ' 请求' : '请求数停止')
+    : (val('af_duration') ? val('af_duration') + ' 秒' : '时长停止');
+  const ann = $('headAnnun');
+  if(ann){
+    const tx = ann.querySelector('span');
+    ann.classList.toggle('go', ready);
+    ann.setAttribute('aria-label', ready ? '必填项齐全，可提交' : '仍有必填项待完善');
+    if(tx) tx.textContent = ready ? '就绪' : '待完善';
+  }
+}
+
+function phaseState(){
+  return [
+    { card:'endpointCard', label:'服务端点', ready:['af_model', 'af_url'].every(fieldReady) },
+    { card:'modeCard', label:'负载模型', ready:modeRequiredIds().every(fieldReady) },
+    { card:'stopCard', label:'停止条件', ready:stopRequiredIds().every(fieldReady) },
+    { card:'dataCard', label:'输入负载', ready:dataRequiredIds().every(fieldReady) },
+    { card:'advCard', label:'高级参数（可选）', ready:true }
+  ];
+}
+
+function renderPhases(){
+  const wrap = $('phaseList'); if(!wrap) return;
+  wrap.innerHTML = phaseState().map(p =>
+    '<button type="button" class="phase-row' + (p.ready ? ' ready' : '') + '" data-target="' + p.card + '">' +
+      '<i class="phase-dot"></i><span class="phase-name">' + p.label + '</span>' +
+      '<span class="phase-st">' + (p.ready ? '就绪' : '待完善') + '</span>' +
+    '</button>').join('');
+}
+$('phaseList').addEventListener('click', e=>{
+  const b = e.target.closest('.phase-row'); if(!b) return;
+  const el = $(b.dataset.target); if(!el) return;
+  el.scrollIntoView({block:'start'});
+  el.classList.add('flash');
+  setTimeout(()=>el.classList.remove('flash'), 1600);
+});
+
+function renderCmd(){
+  const el = $('cmdVal'); if(!el) return;
+  el.textContent = triggerText();
+  el.title = triggerText();
+}
+
+// ---------- 默认值 / 草稿持久化（localStorage） ----------
+function setDefaults(){
+  [
+    'af_model','af_conc','af_rate','af_concRamp','af_rampDur','af_reqcount','af_duration',
+    'af_concCap','af_smooth','af_public','af_input','af_warmup','af_tokenizer','af_seed',
+    'af_extra','af_apikey','af_timeout','af_slice','af_goodput','af_seqdist','af_prefill','af_endpoint'
+  ].forEach(id=>{ const el = $(id); if(el) el.value = ''; });
+  $('af_url').value = 'http://localhost:8000';
+  $('af_etype').value = 'chat';
+  $('af_arrival').value = 'poisson';
+  $('af_customType').value = 'single_turn';
+  $('af_isl').value = '550';
+  $('af_islStd').value = '0';
+  $('af_osl').value = '256';
+  $('af_oslStd').value = '0';
+  $('af_entries').value = '100';
+  $('af_grace').value = '30';
+  $('af_outdir').value = 'artifacts';
+  $('af_export').value = 'records';
+  $('af_uitype').value = 'none';
+  $('af_gpu').value = '';
+  $('af_stream').checked = true;
+  $('af_plot').checked = false;
+  $('af_noservermetrics').checked = false;
+  $('af_netlat').checked = false;
+  $('af_chattemplate').checked = false;
+  document.querySelector('input[name="loadmode"][value="concurrency"]').checked = true;
+  document.querySelector('input[name="stopmode"][value="request_count"]').checked = true;
+  document.querySelector('input[name="datasource"][value="synthetic"]').checked = true;
+  syncGrid('#modeGrid');
+  syncGrid('#stopGrid');
+  syncGrid('#dataGrid');
+}
+
+let suppressDraftSave = false;
+function saveDraft(){
+  if(suppressDraftSave || !userTouched) return;
+  try{
+    const d = {};
+    document.querySelectorAll('input,select,textarea').forEach(el=>{
+      if(!el.id || el.id === 'af_apikey') return;
+      d[el.id] = (el.type === 'checkbox') ? el.checked : el.value;
+    });
+    document.querySelectorAll('input[type=radio]').forEach(r=>{ if(r.checked) d['radio:' + r.name] = r.value; });
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(d));
+  }catch(e){}
+}
+function restoreDraft(){
+  try{
+    const d = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+    // 仅 radio 状态 / 全空字段 → 视为无草稿，不提示并清理
+    const hasContent = Object.keys(d).some(k => {
+      if(k.indexOf('radio:') === 0) return false;
+      const v = d[k];
+      if(typeof v === 'boolean') return v;
+      return typeof v === 'string' && v.trim() !== '';
+    });
+    if(!hasContent){
+      try{ localStorage.removeItem(STORAGE_KEY); }catch(e){}
+      return;
+    }
+    for(const k in d){
+      if(k.indexOf('radio:') === 0){
+        const r = document.querySelector('input[name="' + k.slice(6) + '"][value="' + d[k] + '"]');
+        if(r) r.checked = true;
+      }else{
+        const el = $(k); if(!el) continue;
+        if(el.type === 'checkbox') el.checked = !!d[k];
+        else el.value = d[k];
+      }
+    }
+    userTouched = true;
+    showToast('已恢复上次未提交的草稿，可点「重置表单」清空');
+  }catch(e){}
+}
+function showToast(msg){
+  let t = $('toast');
+  if(!t){
+    t = document.createElement('div');
+    t.id = 'toast'; t.className = 'toast'; t.setAttribute('role', 'status');
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._t);
+  t._t = setTimeout(()=>t.classList.remove('show'), 3200);
+}
+
+// 缺失项 / 提示项点击跳转
+$('validBox').addEventListener('click', e=>{
+  const a = e.target.closest('a.miss-link'); if(!a) return;
+  e.preventDefault();
+  const el = $(a.dataset.jump); if(!el) return;
+  const det = el.closest('details'); if(det) det.open = true;
+  el.scrollIntoView({block:'center'});
+  const f = el.closest('.field'); if(!f) return;
+  f.classList.add('flash');
+  setTimeout(()=>f.classList.remove('flash'), 1600);
+});
+
+// ---------- 按钮 ----------
+function copyText(t, done){
+  if(navigator.clipboard && window.isSecureContext){
+    navigator.clipboard.writeText(t).then(done, ()=>legacyCopy(t, done));
+  }else legacyCopy(t, done);
+}
+function legacyCopy(t, done){
+  const ta = document.createElement('textarea');
+  ta.value = t;
+  ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0';
+  document.body.appendChild(ta); ta.select();
+  try{ document.execCommand('copy'); }catch(e){}
+  ta.remove(); done();
+}
+function okBtn(btn){
+  btn.textContent = '已复制 ✓';
+  clearTimeout(btn._t);
+  btn._t = setTimeout(()=>btn.textContent = btn.dataset.orig || '已复制', 1500);
+}
+
+// 嵌入态「启动压测」：把启动动作转交宿主（宿主经桥收到 launch 后调用 launchCardSession）
+$('launchBtn').addEventListener('click', ()=>postBridge('launch'));
+$('copyCmdBtn').addEventListener('click', ()=>{
+  const cmd = triggerText() + '\n\n' + lastJSON;
+  copyText(cmd, ()=>okBtn($('copyCmdBtn')));
+});
+$('downloadBtn').addEventListener('click', ()=>{
+  const blob = new Blob([lastJSON], {type:'application/json'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = 'aiperf-input.json'; a.click();
+});
+$('resetBtn').addEventListener('click', ()=>{
+  try{ localStorage.removeItem(STORAGE_KEY); }catch(e){}
+  userTouched = false;
+  setDefaults();
+  applyMode();
+  applyStop();
+  applySource();
+  showToast('已重置为默认值');
+});
+$('toggleJson').addEventListener('click', ()=>{
+  const pre = $('jsonOut'), hidden = pre.classList.toggle('hidden');
+  $('toggleJson').textContent = hidden ? '展开 JSON' : '收起 JSON';
+});
+
+// ---------- 初始化 ----------
+for(let i = 0; i < 18; i++){
+  const bar = document.createElement('i');
+  $('loadShape').appendChild(bar);
+}
+
+restoreDraft();
+syncGrid('#modeGrid');
+syncGrid('#stopGrid');
+syncGrid('#dataGrid');
+applyMode();
+applyStop();
+applySource();
+
+// 嵌入态：向宿主上报内容高度（撑开 iframe），并响应状态拉取请求
+if(IS_EMBED){
+  const lb = $('launchBtn'); if(lb) lb.classList.remove('hidden');  // 嵌入态才显示「启动压测」
+  const reportResize = () => postBridge('resize', { height: Math.ceil(document.documentElement.scrollHeight) });
+  if(typeof ResizeObserver !== 'undefined'){
+    const ro = new ResizeObserver(reportResize);
+    ro.observe(document.body);
+  }
+  window.addEventListener('message', e => {
+    if(e.data && e.data.bridge === 'dsh-wb:artifact' && e.data.kind === 'pull'){
+      postBridge('state', { json: buildJSON(), ready: missingRequired().length === 0 && invalidRequired().length === 0, warns: syntaxWarns() });
+    }
+  });
+  reportResize();
+  setTimeout(reportResize, 0);
+}
+</script>
+</body>
+</html>

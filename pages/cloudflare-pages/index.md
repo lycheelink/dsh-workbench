@@ -1,8 +1,8 @@
 ---
 title: dsh-workbench · 企业 Agent 工作台
-updated: 2026-09-23
+updated: 2026-10-26
 footer_source: dsh-workbench 站点首页
-footer_applies: "@lycheelink/dsh-workbench 0.1.2 · DSH Web 插件 · 独立参数采集工具"
+footer_applies: "@lycheelink/dsh-workbench 0.1.4 · DSH Web 插件 · 独立参数采集工具"
 footer_note: 插件在 dsh web 宿主内运行，会话操作以宿主权限为准；采集工具为单文件 HTML，可下载离线使用，生成的 JSON 只在自行复制/下载后才会离开本机。
 ---
 
@@ -18,10 +18,10 @@ eyebrow: DSH Web · TUI · 企业 Agent 工作台
 
 一套工作台，两种用法：**装成 dsh web 插件**——场景卡片即参数表单，点卡即建真实宿主会话并注入组装好的提示词；**或免安装直接用**——本站托管的独立参数采集工具离线填表，实时产出结构化 JSON 与触发指令，直接粘给 dsh-TUI 触发 SKILL 执行。
 
-chips: npm @lycheelink/dsh-workbench · v0.1.2 · 纯增量注入
+chips: npm @lycheelink/dsh-workbench · v0.1.4 · 纯增量注入
 
 card 插件形态 | 侧栏「工作台」入口 + 整页场景卡 + 控制房监控，不替换任何官方插件；启动的会话在宿主会话列表中可见。
-card 工具形态 | 三个参数采集台（寻优 / Profiling / 验证流）+ 工作台在线预览，全部为单文件 HTML，支持离线使用。
+card 工具形态 | 四个参数采集台（寻优 / Profiling / 验证流 / AIPerf）+ 工作台在线预览，全部为单文件 HTML，支持离线使用。
 card 文档 | 宿主安装看 [DSH Quick Start](dsh-quick-start.html)，终端上手看 [dsh-TUI Quick Start](dsh-tui-quick-start.html)。
 ::
 
@@ -42,7 +42,7 @@ col **独立工具 · 生成提示词** [badge: 零安装 · 离线可用]
   不想装任何东西时直接用采集台：填齐部署拓扑、业务建模与寻优目标，把实时生成的 JSON（或触发指令）复制给 dsh-TUI 触发 SKILL 执行。
 col **接收端 · dsh-TUI + SKILL** [badge: 提示词消费方]
   宿主: dsh-TUI（社区 TUI 插件）
-  技能: model-oob-perf-optimize 等
+  技能: model-oob-perf-optimize 等（AIPerf 卡自包含执行提示词）
   文档: [dsh-TUI Quick Start](dsh-tui-quick-start.html)
   采集台的 JSON 配一句触发词就是完整任务指令；粘贴进 dsh-TUI 即可运行。
 ::
@@ -51,12 +51,13 @@ col **接收端 · dsh-TUI + SKILL** [badge: 提示词消费方]
 
 ## 2. 工具与文档
 
-六个入口：三个参数采集台、一个Agent 工作台、两份 quick-start 手册。
+七个入口：四个参数采集台、一个Agent 工作台、两份 quick-start 手册。
 
 ::grid2
 tile [寻优参数采集台](perf-optimize-params.html) | 部署拓扑、业务建模、寻优需求一次采齐，输出可直接提交 model-oob-perf-optimize SKILL 的寻优 JSON。
 tile [Profiling 参数采集台](profiling-collect-params.html) | ascend-profiler 场景的参数采集台，生成结构化 Profiling 配置 JSON。
 tile [验证流测试台](veriflow-params.html) | veriflow 验证流测试的参数采集台，输出对应结构化 JSON 与触发指令。
+tile [AIPerf 压测台](aiperf-params.html) | aiperf 场景的参数采集台：并发饱和 / 速率驱动 / 爬坡三种负载模型，输出含可执行命令的结构化 JSON。
 tile [企业 Agent 工作台](workbench.html) | 插件的场景卡网格与参数表单的免安装预览版；卡数据可经 URL 参数或导入注入。
 tile [dsh-TUI Quick Start](dsh-tui-quick-start.html) | 社区 TUI 插件上手六环节：安装、装技能、启动、配置、授权、寻优参数配置。
 tile [DSH Quick Start](dsh-quick-start.html) | 宿主本体（dsh web）：版本要求、插件与技能管理、排错与备份，基于 0.1.2-rc.1 实测。
@@ -74,4 +75,5 @@ tile [DSH Quick Start](dsh-quick-start.html) | 宿主本体（dsh web）：版�
 | [perf-optimize-params.html](perf-optimize-params.html) | 工具 | 寻优参数采集台（model-oob-perf-optimize） |
 | [profiling-collect-params.html](profiling-collect-params.html) | 工具 | Profiling 参数采集台（ascend-profiler） |
 | [veriflow-params.html](veriflow-params.html) | 工具 | 验证流测试台（veriflow） |
+| [aiperf-params.html](aiperf-params.html) | 工具 | AIPerf 压测台（aiperf） |
 | [workbench.html](workbench.html) | 预览 | 企业 Agent 工作台（插件预览版） |

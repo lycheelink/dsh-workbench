@@ -61,14 +61,19 @@ const sessionDomainSpec = defineDomain({
 });
 
 /**
- * Cards whose config surface is a vendored HTML console (the 寻优参数采集台)
+ * Cards whose config surface is a vendored HTML console (a parameter console)
  * rendered by the client inside an iframe, rather than a DynamicForm. For
  * these cards the console's own readiness meter is the gate: the host skips
  * the formSchema required-field check and takes the console's structured
- * SKILL input (formData.perfConfig) as the user-input block. Keep in sync
+ * console input (formData.perfConfig) as the user-input block. Keep in sync
  * with src/client/artifacts.js.
  */
-const ARTIFACT_FORM_CARD_IDS = new Set(["model-oob-perf-optimize", "ascend-profiler", "veriflow"]);
+const ARTIFACT_FORM_CARD_IDS = new Set([
+  "model-oob-perf-optimize",
+  "ascend-profiler",
+  "veriflow",
+  "aiperf"
+]);
 
 // ── Session event → workbench status mapping (F3) ───────────────────────────
 // Conservative: unknown event types keep the current status. Only transitions
@@ -557,7 +562,7 @@ export default class WorkbenchService extends TypertRemoteService {
 
   /**
    * Prompt for artifact-format cards: keep the scene shell (任务说明 / 系统指令
-   * / 可用工具) and present the console's structured SKILL input as a JSON
+   * / 可用工具) and present the console's structured input as a JSON
    * block in the user-input section — the console JSON is already the exact
    * shape model-oob-perf-optimize consumes, so no flat field transcription.
    */
@@ -573,7 +578,7 @@ export default class WorkbenchService extends TypertRemoteService {
       `## 系统指令`,
       card.agentConfig.systemPrompt,
       ``,
-      `## 用户输入参数（寻优参数采集台结构化输出）`,
+      `## 用户输入参数（参数采集台结构化输出）`,
       ``,
       "```json",
       jsonText,

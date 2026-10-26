@@ -30,6 +30,7 @@
 
 - **Scene Card Grid**: Responsive entry-point grid with category filtering and search
 - **Dynamic Form**: Parameter collection panel with conditional field expansion (e.g., Profiling mode selects trigger different field sets)
+- **AIPerf Benchmark Console**: 并发饱和 / 速率驱动 / 并发爬坡三种负载模型，生成含可执行命令的结构化 JSON；agent 执行压测并解析 TTFT / ITL / 吞吐 / goodput 产物
 - **Conditional Field Evaluation**: `key == 'value'` expressions dynamically show/hide sub-forms（逻辑与宿主端共享单一来源 `src/conditions.js`）
 - **Session Launch**: 通过宿主 `sessionController` **真实创建 agent 会话**并注入组装好的 prompt（`spawnAgent: false` 可关闭真启动、仅记录）
 - **Server-path validation**: `file` 字段是**服务端绝对路径**（如 `/mnt/share_space/profiling`），启动时逐条校验存在性
@@ -45,6 +46,9 @@
 | 开箱寻优 | `model-oob-perf-optimize` | `model-oob-perf-optimize` | 寻优 |
 | Profiling 采集 | `ascend-profiler` | `ascend-profiler` | 寻优 |
 | 验证流测试 | `veriflow` | `veriflow` | 测试 |
+| AIPerf 压测 | —（提示词自包含） | `aiperf` | 测试 |
+
+> AIPerf 压测卡是**自包含**的：采集台 JSON 内含可直接执行的 `aiperf profile` 命令，卡片 systemPrompt 已包含执行与产物分析指令。宿主若安装了 `aiperf` preset 会自动挂载，否则以默认会话运行。
 
 ## Installation
 
@@ -82,7 +86,7 @@ npm run pack:release  # Build + npm pack
 
 ## Static Pages + Publish
 
-三个参数控制台（寻优参数采集台 / Profiling 参数采集台 / 验证流测试台）是**双模单文件 HTML**：既在插件内嵌运行（`src/client/artifacts/*.html`，经 `npm run sync:artifact` 从 `pages/cloudflare-pages/dist/` 同步），也独立部署在 Cloudflare Pages。**`pages/cloudflare-pages/dist/` 是唯一权威源**——改页面只改这里，然后：
+四个参数控制台（寻优参数采集台 / Profiling 参数采集台 / 验证流测试台 / AIPerf 压测台）是**双模单文件 HTML**：既在插件内嵌运行（`src/client/artifacts/*.html`，经 `npm run sync:artifact` 从 `pages/cloudflare-pages/dist/` 同步），也独立部署在 Cloudflare Pages。**`pages/cloudflare-pages/dist/` 是唯一权威源**——改页面只改这里，然后：
 
 ```bash
 npm run sync:artifact   # 刷新插件内嵌副本（幂等剥离 builder node-id 噪音）
@@ -99,7 +103,7 @@ npm run sync:artifact   # 刷新插件内嵌副本（幂等剥离 builder node-i
 npm version patch -m "chore: release %s"  # bumps package.json + package-lock.json, creates commit + tag
 # keep dsh.plugin.json version in sync (npm version does not touch it)
 git push origin main
-git push origin v0.1.3                     # ← this push triggers the action
+git push origin v0.1.4                     # ← this push triggers the action
 ```
 
 - **dist-tag semantics**: stable versions (no `-` prerelease suffix) publish to `latest`; prereleases (e.g. `0.1.2-alpha.0`, via `npm version prerelease --preid alpha`) publish to `next`.
