@@ -2,7 +2,7 @@
 title: dsh-workbench · 企业 Agent 工作台
 updated: 2026-10-26
 footer_source: dsh-workbench 站点首页
-footer_applies: "@lycheelink/dsh-workbench 0.1.5 · DSH Web 插件 · 独立参数采集工具"
+footer_applies: "@lycheelink/dsh-workbench 0.1.6 · DSH Web 插件 · 独立参数采集工具"
 footer_note: 插件在 dsh web 宿主内运行，会话操作以宿主权限为准；采集工具为单文件 HTML，可下载离线使用，生成的 JSON 只在自行复制/下载后才会离开本机。
 ---
 
@@ -18,7 +18,7 @@ eyebrow: DSH Web · TUI · 企业 Agent 工作台
 
 一套工作台，两种用法：**装成 dsh web 插件**——场景卡片即参数表单，点卡即建真实宿主会话并注入组装好的提示词；**或免安装直接用**——本站托管的独立参数采集工具离线填表，实时产出结构化 JSON 与触发指令，直接粘给 dsh-TUI 触发 SKILL 执行。
 
-chips: npm @lycheelink/dsh-workbench · v0.1.5 · 纯增量注入
+chips: npm @lycheelink/dsh-workbench · v0.1.6 · 纯增量注入
 
 card 插件形态 | 侧栏「工作台」入口 + 整页场景卡 + 控制房监控，不替换任何官方插件；启动的会话在宿主会话列表中可见。
 card 工具形态 | 四个参数采集台（寻优 / Profiling / 验证流 / AIPerf）+ 工作台在线预览，全部为单文件 HTML，支持离线使用。
